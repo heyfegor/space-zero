@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  [data-theme=dark]{ --bg:#0E0F11; --bgr:14,15,17; --surface:#121417; --surface2:#141619; --ink:#EDEBE6; --ink2:#C6CBD1; --mut1:#9BA0A6; --mut2:#8A9099; --mut3:#5E646B; --mut4:#3F4349; --line1:#23262B; --line2:#1B1E22; --line3:#16191C; --lineS:#2A2E33; }
+  [data-theme=light]{ --bg:#F4F2EC; --bgr:244,242,236; --surface:#FBFAF6; --surface2:#ECEAE2; --ink:#17181A; --ink2:#33363A; --mut1:#5E646B; --mut2:#6C727A; --mut3:#8B9199; --mut4:#B7BCC2; --line1:#DED9CD; --line2:#E7E3D9; --line3:#EDEAE1; --lineS:#D1CCC0; }
+  :root{ --accent:#E4572E; }
+  body { background:#0E0F11; color:#EDEBE6; font-family:'Schibsted Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  a { color:#E4572E; text-decoration:none; } a:hover { color:#F06B45; }
+  ::selection { background:#E4572E; color:#fff; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  .szhov { transition:color .15s ease, background .15s ease, border-color .15s ease; }
+  @keyframes szUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes szSpin { to { transform:rotate(360deg); } }
+  @keyframes szPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+  @keyframes szDraw { to { stroke-dashoffset:0; } }
+  .szup { animation:szUp .5s cubic-bezier(.22,.61,.36,1) both; }
+  .szspin { animation:szSpin .9s linear infinite; }
+  .szpulse { animation:szPulse 1.6s ease-in-out infinite; }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh; background:var(--bg); color:var(--ink); display:flex; flex-direction:column;">
+
+  <div style="position:sticky; top:0; z-index:30; background:rgba(var(--bgr),.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--line3);">
+    <div style="max-width:680px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <a href="./Execution.dc.html" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; display:flex; align-items:center; justify-content:center;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+      </a>
+      <span style="font-weight:700; font-size:12px; letter-spacing:0.2em; text-transform:uppercase;">Space&nbsp;Zero</span>
+      <button onClick="{{ toggleTheme }}" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path></svg></sc-if>
+        <sc-if value="{{ isLight }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="flex:1; max-width:680px; width:100%; margin:0 auto; padding:32px 22px 130px;">
+
+    <div class="mono" style="display:flex; align-items:center; gap:9px; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent);">
+      <span class="szpulse" style="width:7px; height:7px; border-radius:100px; background:var(--accent);"></span>Resolving a disruption
+    </div>
+    <h1 style="margin-top:16px; font-size:clamp(30px,8.5vw,40px); line-height:1.05; font-weight:700; letter-spacing:-0.035em;">Something changed on your trip.</h1>
+
+    <!-- event -->
+    <div class="szup" style="margin-top:24px; border:1px solid rgba(228,87,46,.4); border-radius:16px; background:var(--surface); overflow:hidden;">
+      <div style="padding:18px; display:flex; gap:13px; align-items:flex-start;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><path d="M12 9v4M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+        <div>
+          <div style="font-size:16px; font-weight:700; color:var(--ink);">Flight SQ317 delayed 3 hours</div>
+          <div class="mono" style="font-size:12px; color:var(--mut2); margin-top:5px;">Now departs 15:05 · was 12:05 · reported by the flight tracker</div>
+        </div>
+      </div>
+      <div style="border-top:1px solid var(--line2); padding:15px 18px; background:var(--surface2);">
+        <div class="mono" style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--mut3);">Consequence</div>
+        <div style="margin-top:6px; font-size:14px; color:var(--ink2); line-height:1.45;">Your connection <span class="mono" style="color:var(--ink);">SIN → SYD (SQ221)</span> is no longer reachable. The booked journey no longer meets your trip.</div>
+      </div>
+    </div>
+
+    <!-- objective reminder -->
+    <div class="szup" style="margin-top:14px; display:flex; align-items:center; gap:11px; border:1px solid var(--line1); border-radius:12px; background:var(--surface); padding:13px 16px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mut2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+      <div class="mono" style="font-size:12px; color:var(--mut1);">Still holding your requirement: <span style="color:var(--ink);">arrive before 10:00 Fri</span></div>
+    </div>
+
+    <!-- reasoning -->
+    <div class="mono" style="margin-top:26px; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--mut3);">What I'm doing</div>
+    <div style="margin-top:12px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+        <div style="display:flex; gap:15px; align-items:flex-start;">
+          <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+            <div style="width:28px; height:28px; border-radius:100px; border:1.5px solid {{ s.ringBorder }}; background:{{ s.ringBg }}; display:flex; align-items:center; justify-content:center;">
+              <sc-if value="{{ s.done }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:30; stroke-dashoffset:30; animation:szDraw .4s ease forwards;"><path d="M4 12.5l5 5L20 6.5"></path></svg></sc-if>
+              <sc-if value="{{ s.active }}"><span class="szspin" style="width:14px; height:14px; border-radius:100px; border:2px solid var(--accent); border-top-color:transparent;"></span></sc-if>
+              <sc-if value="{{ s.pending }}"><span style="width:6px; height:6px; border-radius:100px; background:var(--mut4);"></span></sc-if>
+            </div>
+            <sc-if value="{{ s.notLast }}"><div style="width:1.5px; height:30px; background:{{ s.lineBg }};"></div></sc-if>
+          </div>
+          <div style="padding-top:3px; padding-bottom:18px;">
+            <div style="font-size:15px; font-weight:600; color:{{ s.textColor }};">{{ s.label }}</div>
+            <div class="mono" style="font-size:11px; color:var(--mut3); margin-top:3px;">{{ s.detail }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- outcome preview -->
+    <sc-if value="{{ finished }}">
+    <div style="margin-top:8px; border:1px solid var(--line1); border-radius:16px; background:var(--surface); padding:18px; animation:szUp .5s cubic-bezier(.22,.61,.36,1) both;">
+      <div class="mono" style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent);">Best alternative found</div>
+      <div style="margin-top:8px; font-size:15px; line-height:1.5; color:var(--ink);">Rebook SIN → SYD on SQ231. Arrives <span class="mono" style="font-weight:700;">09:05 Fri</span>, still before your deadline.</div>
+      <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; padding-top:14px; border-top:1px solid var(--line2);">
+        <div class="mono" style="font-size:12px; color:var(--mut2);">Extra cost <span style="color:var(--ink); font-weight:700;">+£72</span></div>
+        <div class="mono" style="font-size:12px; color:var(--accent);">within £150 allowance</div>
+      </div>
+    </div>
+    <a href="./Resolution.dc.html" class="szhov" style="margin-top:16px; width:100%; display:flex; align-items:center; justify-content:center; gap:9px; background:var(--ink); color:var(--bg); font-weight:600; font-size:15px; padding:16px; border:none; border-radius:100px;">See resolution →</a>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;390px&quot;,&quot;height&quot;:&quot;844px&quot;}}">
+class Component extends DCLogic {
+  state = { theme:'dark', step:0 };
+  _defs = [
+    { label:'Finding alternatives', detail:'4 routes that still land before 10:00 Fri' },
+    { label:'Comparing on cost and arrival', detail:'Ranking against your original trip' },
+    { label:'Checking your authority', detail:'Testing cost against your £150 recovery allowance' },
+  ];
+  componentDidMount(){ this._syncBody(); this._tick(); }
+  componentDidUpdate(pp,ps){ if(ps.theme!==this.state.theme) this._syncBody(); }
+  _syncBody(){ try{ document.body.style.background = this.state.theme==='light'?'#F4F2EC':'#0E0F11'; }catch(e){} }
+  componentWillUnmount(){ clearTimeout(this._t); }
+  _tick(){ if(this.state.step >= this._defs.length) return; this._t = setTimeout(()=>{ this.setState(s=>({step:s.step+1})); this._tick(); }, 1400); }
+  toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+
+  renderVals(){
+    const { theme, step } = this.state;
+    const n = this._defs.length;
+    const finished = step >= n;
+    const steps = this._defs.map((d,i)=>{
+      const done=i<step, active=i===step&&!finished, pending=i>step;
+      return { ...d, done, active, pending, notLast:i<n-1,
+        ringBorder: done||active ? 'var(--accent)' : 'var(--line1)',
+        ringBg: done ? 'var(--accent)' : 'transparent',
+        lineBg: done ? 'var(--accent)' : 'var(--line1)',
+        textColor: pending ? 'var(--mut3)' : 'var(--ink)' };
+    });
+    return { theme, isDark:theme==='dark', isLight:theme==='light', toggleTheme:()=>this.toggleTheme(), steps, finished };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { background:#0E0F11; color:#EDEBE6; font-family:'Schibsted Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  a { color:#E4572E; text-decoration:none; }
+  a:hover { color:#F06B45; }
+  ::selection { background:#E4572E; color:#0E0F11; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  @keyframes sz-pulse { 0%,100%{ opacity:.35; transform:scale(1);} 50%{ opacity:1; transform:scale(1.5);} }
+  @keyframes sz-caret { 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+  @keyframes sz-flip { 0%{ transform:rotateX(0);} 50%{ transform:rotateX(-90deg);} 50.01%{ transform:rotateX(90deg);} 100%{ transform:rotateX(0);} }
+  @keyframes sz-float { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
+  .flap { display:inline-block; animation:sz-flip .34s ease-in-out; transform-origin:center; }
+  @media (min-width:640px){ .sz-why{ grid-template-columns:1fr 1fr !important; column-gap:44px; } }
+</style>
+</helmet>
+
+<div id="top">
+
+  <!-- MASTHEAD -->
+  <nav style="display:flex; align-items:center; justify-content:space-between; padding:20px 22px; max-width:1120px; margin:0 auto;">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span style="font-weight:700; font-size:16px; letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap;">Space Zero</span>
+    </div>
+    <a href="#cta" class="mono" style="font-size:11px; letter-spacing:0.1em; color:#EDEBE6; border:1px solid #2A2E33; padding:10px 16px; border-radius:100px; white-space:nowrap;">PLAN A TRIP ↗</a>
+  </nav>
+
+  <!-- HERO -->
+  <header style="position:relative; min-height:82vh; display:flex; align-items:center; padding:60px 22px 90px;">
+    <div style="text-align:center; max-width:820px; margin:0 auto;">
+      <h1 style="font-size:clamp(52px,13vw,116px); line-height:0.92; font-weight:700; letter-spacing:-0.045em; text-wrap:balance;">Your trip<br>runs <span style="color:#E4572E;">itself.</span></h1>
+      <p style="margin:30px auto 0; font-size:18px; line-height:1.55; color:#9BA0A6; max-width:40ch;">Tell Space Zero where you need to go, when you need to arrive, and how much you're willing to spend and it handles the rest.</p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-top:36px; flex-wrap:wrap;">
+        <a href="#cta" style="background:#EDEBE6; color:#0E0F11; font-weight:600; font-size:16px; padding:15px 28px; border-radius:100px;">Plan a trip ↗</a>
+        <a href="#recovery" style="background:#17191C; color:#EDEBE6; font-weight:600; font-size:16px; padding:15px 28px; border-radius:100px; border:1px solid #2A2E33;">See it recover a trip</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- BELIEF 1 -->
+  <section style="max-width:720px; margin:0 auto; padding:80px 22px;">
+    <div class="mono" style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#E4572E;">The problem</div>
+    <h2 style="margin-top:16px; font-size:clamp(30px,5.6vw,48px); line-height:1.04; font-weight:700; letter-spacing:-0.03em;">Travel shouldn't be a complex process.</h2>
+    <p style="margin-top:18px; font-size:18px; line-height:1.55; color:#9BA0A6; max-width:52ch;">A lot of people still carry out their travel tasks manually. They have to search for flights themselves, and even book and pay for it themselves. And then after this they still experience delays and cancellation. All of this leads to waste of time, money, and effort. You shouldn't go through all that.</p>
+  </section>
+
+  <!-- BELIEF 2 (recovery board, self-flipping) -->
+  <section id="recovery" data-sz-board style="max-width:720px; margin:0 auto; padding:80px 22px;">
+    <div class="mono" style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#E4572E;">The moment that matters</div>
+    <h2 style="margin-top:16px; font-size:clamp(30px,5.6vw,48px); line-height:1.04; font-weight:700; letter-spacing:-0.03em;">When travel breaks, Space Zero fixes it.</h2>
+    <p style="margin-top:18px; font-size:18px; line-height:1.55; color:#9BA0A6; max-width:52ch;">Flight delayed 3 hours. Your route no longer works. Space Zero finds an alternative within your spending limit and rebooks it automatically, saving you from delay and stress.</p>
+
+    <!-- live status -->
+    <div class="mono" style="margin-top:30px; display:flex; align-items:center; gap:11px; font-size:12px; letter-spacing:0.08em;">
+      <span style="position:relative; width:9px; height:9px; border-radius:50%; background:{{ headColor }}; flex:none;"><span style="position:absolute; inset:0; border-radius:50%; background:{{ headColor }}; animation:{{ headPulse }};"></span></span>
+      <span style="color:{{ headColor }}; font-weight:500;">{{ headText }}</span>
+    </div>
+
+    <!-- ledger -->
+    <div class="mono" style="margin-top:20px; border-top:1px solid #23262B;">
+      <sc-for list="{{ ledger }}" as="l" hint-placeholder-count="4">
+        <div style="display:grid; grid-template-columns:auto 1fr; gap:14px; padding:13px 2px; border-bottom:1px solid #1B1E22; font-size:12px; letter-spacing:0.04em;">
+          <span style="color:#5E646B;">{{ l.t }}</span>
+          <span style="color:#C6CBD1; overflow:hidden; text-overflow:ellipsis;">{{ l.textEl }}</span>
+        </div>
+      </sc-for>
+      <span style="display:{{ caretShow }}; color:#E4572E; animation:sz-caret 1s step-end infinite; padding:8px 2px;">▊</span>
+    </div>
+
+    <button onClick="{{ runRecovery }}" class="mono" style="margin-top:22px; display:inline-flex; align-items:center; gap:9px; background:{{ runBg }}; color:{{ runColor }}; border:1px solid {{ runBorder }}; border-radius:100px; padding:13px 22px; font-size:12px; letter-spacing:0.08em; cursor:pointer;">
+      <span>{{ runIcon }}</span> {{ runLabel }}
+    </button>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section style="max-width:720px; margin:0 auto; padding:80px 22px;">
+    <h2 style="font-size:clamp(34px,7vw,60px); line-height:1.0; font-weight:700; letter-spacing:-0.035em;">Give it the trip. Stay in control.</h2>
+
+    <div style="margin-top:52px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="4">
+        <div style="display:grid; grid-template-columns:24px 1fr; gap:20px;">
+          <div style="position:relative; display:flex; justify-content:center;">
+            <div style="position:absolute; top:6px; bottom:-42px; width:1.5px; background:#23262B;"></div>
+            <div style="position:relative; z-index:1; width:11px; height:11px; border-radius:50%; background:#E4572E; margin-top:6px;"></div>
+          </div>
+          <div style="padding-bottom:42px;">
+            <div class="mono" style="font-size:12px; letter-spacing:0.08em; color:#8A9099;">{{ s.n }}</div>
+            <h3 style="margin-top:8px; font-size:23px; font-weight:600; letter-spacing:-0.01em;">{{ s.title }}</h3>
+            <p style="margin-top:8px; font-size:17px; line-height:1.5; color:#9BA0A6; max-width:48ch;">{{ s.body }}</p>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- WHY USE IT -->
+  <section style="max-width:720px; margin:0 auto; padding:80px 22px;">
+    <h2 style="font-size:clamp(34px,7vw,60px); line-height:1.0; font-weight:700; letter-spacing:-0.035em;">Why Space Zero?</h2>
+    <div style="margin-top:44px; display:grid; grid-template-columns:1fr; gap:0;" class="sz-why">
+      <sc-for list="{{ reasons }}" as="r" hint-placeholder-count="4">
+        <div style="border-top:1px solid #23262B; padding:26px 0;">
+          <span style="color:#E4572E; font-size:18px;">✓</span>
+          <h3 style="margin-top:14px; font-size:21px; font-weight:600; letter-spacing:-0.01em;">{{ r.title }}</h3>
+          <p style="margin-top:8px; font-size:16px; line-height:1.5; color:#9BA0A6; max-width:46ch;">{{ r.body }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section style="max-width:720px; margin:0 auto; padding:80px 22px;">
+    <h2 style="font-size:clamp(34px,7vw,60px); line-height:1.0; font-weight:700; letter-spacing:-0.035em;">Questions</h2>
+    <div style="margin-top:40px;">
+      <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="5">
+        <div onClick="{{ f.toggle }}" style="border-top:1px solid #23262B; padding:22px 0; cursor:pointer;">
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center;">
+            <span style="font-size:18px; font-weight:600; letter-spacing:-0.01em; color:{{ f.qColor }};">{{ f.q }}</span>
+            <span class="mono" style="font-size:20px; color:#8A9099;">{{ f.sign }}</span>
+          </div>
+          <div style="max-height:{{ f.h }}; overflow:hidden; transition:max-height .3s ease;">
+            <p style="margin-top:14px; font-size:16px; line-height:1.55; color:#9BA0A6; max-width:52ch;">{{ f.a }}</p>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section id="cta" style="background:#E4572E; color:#0E0F11; margin-top:40px;">
+    <div style="max-width:1120px; margin:0 auto; padding:96px 22px 60px;">
+      <div class="mono" style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:#0E0F11; opacity:.7;">Ready when you are</div>
+      <h2 style="margin-top:24px; font-size:clamp(48px,13vw,112px); line-height:0.9; font-weight:700; letter-spacing:-0.05em;">Stop coordinating<br>your trip.</h2>
+      <p style="margin-top:24px; font-size:18px; line-height:1.5; max-width:42ch; color:#0E0F11; opacity:.82;">Tell Space Zero where you're going. Let it handle the work between here and there.</p>
+      <div style="margin-top:40px;">
+        <a href="#top" style="background:#0E0F11; color:#EDEBE6; font-weight:600; font-size:17px; padding:16px 32px; border-radius:100px; display:inline-block;">Plan a trip ↗</a>
+      </div>
+      <div class="mono" style="margin-top:80px; padding-top:22px; border-top:1px solid rgba(14,15,17,.25); display:flex; align-items:center; justify-content:space-between; gap:16px; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:#0E0F11; flex-wrap:wrap;">
+        <span style="font-weight:700;">Space Zero</span>
+        <span style="opacity:.7;">Autonomous travel operator · 2026</span>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;390px&quot;,&quot;height&quot;:&quot;800px&quot;}}">
+class Component extends DCLogic {
+  state = { step: 0, started: false, running: false, flipKey: 0, open: 0 };
+
+  componentDidMount() {
+    this._onScroll = () => {
+      if (this.state.started) return;
+      const el = document.querySelector('[data-sz-board]');
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight * 0.55 && r.bottom > 60) this.play();
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    this._onScroll();
+  }
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this._onScroll);
+    clearInterval(this._t);
+  }
+  play() {
+    clearInterval(this._t);
+    this.setState({ step: 0, started: true, running: true });
+    const STEPS = 6;
+    this._t = setInterval(() => {
+      this.setState(s => {
+        if (s.step >= STEPS) { clearInterval(this._t); return { ...s, running: false }; }
+        return { step: s.step + 1 };
+      });
+    }, 1050);
+  }
+
+  renderVals() {
+    const { step, started, open } = this.state;
+
+    const headMap = [
+      ['MONITORING', '#E4572E'],
+      ['DISRUPTION DETECTED', '#C4402E'],
+      ['EVALUATING RECOVERY', '#E4572E'],
+      ['CHECKING AUTHORITY', '#E4572E'],
+      ['REBOOKING', '#E4572E'],
+      ['RESOLVED', '#EDEBE6'],
+      ['RESOLVED', '#EDEBE6'],
+    ];
+    const h = started ? headMap[Math.min(step, 6)] : ['MONITORING', '#E4572E'];
+
+    const allLedger = [
+      { at: 1, t: '04:31', el: 'Flight LHR to SIN delayed by 3h00' },
+      { at: 2, t: '04:32', el: 'Singapore connection no longer viable · 3 alternatives found' },
+      { at: 4, t: '04:33', el: React.createElement('span', null, 'Authority check  ', React.createElement('span',{style:{color:'#E4572E',fontWeight:700}},'+£96'), '  within  £150  ', React.createElement('span',{style:{color:'#E4572E',fontWeight:700}},'permitted')) },
+      { at: 5, t: '04:34', el: 'Rebooked SIN to SYD · new arrival 08:40 Sat · conf SZ 4471' },
+    ];
+    const ledger = allLedger.filter(l => started && step >= l.at).map(l => ({ t: l.t, textEl: l.el }));
+
+    const faqData = [
+      { q: 'Do I need to plan anything myself?', a: 'No. You give Space Zero the objective and your limits. It plans, books and manages the journey inside those limits.' },
+      { q: 'What can it spend without asking?', a: 'Only what you allow. You set a recovery allowance, and Space Zero can act up to that figure. Past it, the rule is enforced and it stops to ask you.' },
+      { q: 'What happens when a flight is disrupted?', a: 'It detects the disruption, finds the best alternative, checks it against your recovery allowance, and rebooks if it is permitted. You receive the outcome, not the crisis.' },
+      { q: 'Can it act completely on its own?', a: 'Only inside the authority you grant. Every action is bounded by the limits you set, and the boundary is enforced by the system, not by the agent.' },
+    ];
+    const faqs = faqData.map((f, i) => ({
+      q: f.q, a: f.a,
+      sign: open === i + 1 ? '−' : '+',
+      h: open === i + 1 ? '200px' : '0px',
+      qColor: open === i + 1 ? '#E4572E' : '#EDEBE6',
+      toggle: () => this.setState(s => ({ open: s.open === i + 1 ? 0 : i + 1 })),
+    }));
+
+    return {
+      runRecovery: () => this.play(),
+      runLabel: !started ? 'RUN RECOVERY' : (this.state.running ? 'RUNNING' : 'REPLAY'),
+      runIcon: !started ? '▶' : '↻',
+      runBg: !started ? '#E4572E' : 'transparent',
+      runColor: !started ? '#0E0F11' : '#8A9099',
+      runBorder: !started ? '#E4572E' : '#2A2E33',
+      caretShow: (this.state.running && step >= 1) ? 'inline-block' : 'none',
+      headText: h[0], headColor: h[1],
+      headPulse: h[0] === 'MONITORING' ? 'sz-pulse 2.4s ease-in-out infinite' : 'none',
+      ledger, faqs,
+
+      steps: [
+        { n: '01', title: 'Describe the trip', body: 'One brief. Where you need to be, by when, and the budget you will allow.' },
+        { n: '02', title: 'Set the boundaries', body: 'A trip budget and a recovery allowance. Space Zero acts freely inside them.' },
+        { n: '03', title: 'It operates the journey', body: 'It books, then monitors every leg in the background without asking you to watch.' },
+        { n: '04', title: 'It fixes what breaks', body: 'When reality changes, it recovers the trip inside your rules and reports the outcome.' },
+      ],
+      reasons: [
+        { title: 'It takes responsibility', body: 'You hand over the objective, not a list of tabs to manage. Space Zero owns the journey end to end.' },
+        { title: 'It acts inside your limits', body: 'Every decision is bounded by the authority you grant. It cannot spend past your limit.' },
+        { title: 'It resolves, it does not escalate', body: 'Most disruptions are fixed before you would have noticed. You get the outcome, calmly.' },
+        { title: 'It asks only when it must', body: 'When a fix exceeds your rules, it stops and hands you one clear decision, never twenty options.' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+/* Space Zero — design system ported from the Claude Design handoff.
+   Palette, type, and motion are the visual source of truth. */
+
+:root {
+  --bg: #0e0f11;
+  --bgr: 14, 15, 17;
+  --ink: #edebe6;
+  --accent: #e4572e;
+  --accent-hover: #f06b45;
+  --disruption: #c4402e;
+  --disruption-2: #e08e77;
+  --warm: #d79a5a;
+  --muted: #9ba0a6;
+  --muted-2: #8a9099;
+  --faint: #5e646b;
+  --ink-2: #c6cbd1;
+  --surface: #131518;
+  --surface-2: #141619;
+  --surface-3: #17191c;
+  --line: #23262b;
+  --line-2: #1b1e22;
+  --line-3: #2a2e33;
+  --font-sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Light theme — from the approved designs' [data-theme=light] palette, mapped
+   onto Space Zero's variable names. Applied by the product flow's theme wrapper;
+   the marketing Landing has no wrapper, so it stays dark. No pure white. */
+[data-theme="light"] {
+  --bg: #f4f2ec;
+  --bgr: 244, 242, 236;
+  --ink: #17181a;
+  --ink-2: #33363a;
+  --muted: #5e646b;
+  --muted-2: #6c727a;
+  --faint: #8b9199;
+  --surface: #fbfaf6;
+  --surface-2: #eceae2;
+  --surface-3: #edeae1;
+  --line: #ded9cd;
+  --line-2: #e7e3d9;
+  --line-3: #d1ccc0;
+  --warm: #b4772f;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+::selection { background: var(--accent); color: var(--bg); }
+img { max-width: 100%; }
+
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+button { font-family: inherit; }
+
+/* Motion from the design */
+@keyframes sz-pulse { 0%,100% { opacity: .4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.6); } }
+@keyframes sz-caret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+@keyframes sz-flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(-90deg); } 50.01% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+@keyframes sz-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.flap { display: inline-block; animation: sz-flip .34s ease-in-out; transform-origin: center; }
+
+/* Product-flow motion (ported from the designs) */
+@keyframes sz-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sz-spin { to { transform: rotate(360deg); } }
+@keyframes sz-pop { 0% { transform: scale(.4); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes sz-draw { to { stroke-dashoffset: 0; } }
+@keyframes sz-soft { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.sz-up { animation: sz-up .5s cubic-bezier(.22,.61,.36,1) both; }
+.sz-spin { animation: sz-spin .9s linear infinite; }
+.sz-soft { animation: sz-soft 1.6s ease-in-out infinite; }
+.sz-hover { transition: color .15s ease, background .15s ease, border-color .15s ease, box-shadow .2s ease; }
+.sz-row:hover { border-color: var(--line-3); }
+
+/* Range input (Authority slider) */
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  height: 3px; background: var(--line-3); border-radius: 3px;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; border: 3px solid var(--bg);
+}
+
+@media (min-width: 640px) {
+  .sz-why { grid-template-columns: 1fr 1fr !important; column-gap: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+}

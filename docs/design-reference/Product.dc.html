@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  [data-theme=dark]{ --bg:#0E0F11; --bgr:14,15,17; --surface:#121417; --surface2:#141619; --ink:#EDEBE6; --ink2:#C6CBD1; --mut1:#9BA0A6; --mut2:#8A9099; --mut3:#5E646B; --mut4:#3F4349; --line1:#23262B; --line2:#1B1E22; --line3:#16191C; --lineS:#2A2E33; --scrim:rgba(6,7,8,.72); --warm:#E08E77; --sheet:#191C20; }
+  [data-theme=light]{ --bg:#F4F2EC; --bgr:244,242,236; --surface:#FBFAF6; --surface2:#ECEAE2; --ink:#17181A; --ink2:#33363A; --mut1:#5E646B; --mut2:#6C727A; --mut3:#8B9199; --mut4:#B7BCC2; --line1:#DED9CD; --line2:#E7E3D9; --line3:#EDEAE1; --lineS:#D1CCC0; --scrim:rgba(28,26,22,.34); --warm:#B44A2E; --sheet:#FFFFFF; }
+  :root{ --bg:#0E0F11; --ink:#EDEBE6; --accent:#E4572E; }
+  body { background:var(--bg); color:var(--ink); font-family:'Schibsted Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; transition:background .35s ease; }
+  a { color:#E4572E; text-decoration:none; }
+  a:hover { color:#F06B45; }
+  ::selection { background:#E4572E; color:#fff; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  textarea, input { font-family:inherit; }
+  textarea:focus, input:focus { outline:none; }
+  @keyframes szUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes szSheet { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  @keyframes szFade { from { opacity:0; } to { opacity:1; } }
+  @keyframes szScan { 0% { top:14%; opacity:0; } 15% { opacity:1; } 85% { opacity:1; } 100% { top:82%; opacity:0; } }
+  @keyframes szRing { 0% { transform:scale(.7); opacity:.5; } 100% { transform:scale(1.35); opacity:0; } }
+  @keyframes szPop { 0% { transform:scale(.5); opacity:0; } 60% { transform:scale(1.08); } 100% { transform:scale(1); opacity:1; } }
+  @keyframes szDraw { to { stroke-dashoffset:0; } }
+  .szup { animation:szUp .5s cubic-bezier(.22,.61,.36,1) both; }
+  .szhov { transition:color .15s ease, background .15s ease, border-color .15s ease; }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh; background:var(--bg); display:flex; flex-direction:column; transition:background .35s ease;">
+
+  <!-- APP BAR -->
+  <div style="position:sticky; top:0; z-index:30; background:rgba(var(--bgr),.82); backdrop-filter:blur(12px); border-bottom:1px solid var(--line3);">
+    <div style="max-width:680px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <span style="font-weight:700; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink);">Space&nbsp;Zero</span>
+      <div class="mono" style="display:flex; align-items:center; gap:8px;">
+        <button onClick="{{ openHistory }}" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; padding:8px 13px; border-radius:100px; cursor:pointer; font-family:inherit;">Trips</button>
+        <button onClick="{{ openAccount }}" class="szhov" style="background:var(--ink); border:1px solid var(--ink); color:var(--bg); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; padding:8px 13px; border-radius:100px; cursor:pointer; font-family:inherit; font-weight:600; white-space:nowrap;">Account</button>
+        <button onClick="{{ toggleTheme }}" class="szhov" title="Toggle theme" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center;">
+          <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path></svg></sc-if>
+          <sc-if value="{{ isLight }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HERO / TRIP BRIEF -->
+  <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:40px 22px 80px;">
+    <div style="width:100%; max-width:560px; text-align:center;">
+      <div class="mono" style="font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color:#E4572E;">● Autonomous travel operator</div>
+      <h1 style="margin-top:26px; font-size:clamp(38px,11vw,60px); line-height:0.98; font-weight:700; letter-spacing:-0.04em; color:var(--ink);">Where are you going?</h1>
+      <p style="margin:18px auto 0; max-width:400px; font-size:16px; line-height:1.55; color:var(--mut1);">Tell me the trip the way you'd tell a person. I plan it, book it, and run it.</p>
+
+      <div style="margin-top:34px; text-align:left; border:1px solid var(--line1); border-radius:16px; background:var(--surface); padding:18px 18px 14px;">
+        <textarea value="{{ briefText }}" onInput="{{ onBrief }}" rows="3" placeholder="I need to be in Sydney 14–28 Oct. Keep it under £1,500, aisle seat, and handle disruptions up to £150 without asking me." style="width:100%; background:transparent; border:none; resize:none; color:var(--ink); font-size:16px; line-height:1.5;"></textarea>
+        <div style="display:flex; align-items:center; justify-content:flex-end; margin-top:12px;">
+          <button onClick="{{ sendBrief }}" class="szhov" style="display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:var(--bg); font-weight:600; font-size:14px; padding:11px 18px; border:none; border-radius:100px; cursor:pointer;">Brief Space Zero →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TRIPS HISTORY PANEL ============ -->
+  <sc-if value="{{ historyOpen }}">
+  <div onClick="{{ closeHistory }}" style="position:fixed; inset:0; z-index:40; background:var(--scrim); backdrop-filter:blur(3px);"></div>
+  <div class="szup" style="position:fixed; z-index:41; top:0; right:0; bottom:0; width:min(420px,88vw); background:var(--bg); border-left:1px solid var(--line1); padding:26px 24px; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <span class="mono" style="font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--mut2);">Trips</span>
+      <span onClick="{{ closeHistory }}" class="mono" style="font-size:11px; color:var(--mut2); cursor:pointer; letter-spacing:0.1em;">CLOSE ✕</span>
+    </div>
+    <sc-if value="{{ hasAccount }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:26px;">
+      <sc-for list="{{ trips }}" as="t" hint-placeholder-count="4">
+        <div style="padding:22px 0; border-top:1px solid var(--line2);">
+          <div class="mono" style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:18px; font-weight:700; letter-spacing:0.06em; color:var(--ink);">{{ t.city }}</span>
+            <span style="font-size:9px; letter-spacing:0.12em; color:{{ t.color }}; border:1px solid {{ t.border }}; border-radius:100px; padding:5px 11px;">{{ t.status }}</span>
+          </div>
+          <div class="mono" style="margin-top:9px; font-size:11px; letter-spacing:0.06em; color:var(--mut2);">{{ t.dates }}</div>
+          <div class="mono" style="margin-top:5px; font-size:11px; letter-spacing:0.04em; color:var(--mut3);">{{ t.route }}</div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ noAccount }}">
+    <div style="margin-top:64px; text-align:center;">
+      <div class="mono" style="font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--mut3);">No trips yet</div>
+      <p style="margin-top:14px; font-size:15px; line-height:1.55; color:var(--mut2);">Trips you brief will live here once you have an account.</p>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ============ ACCOUNT PANEL ============ -->
+  <sc-if value="{{ accountOpen }}">
+  <div onClick="{{ closeAccount }}" style="position:fixed; inset:0; z-index:40; background:var(--scrim); backdrop-filter:blur(3px);"></div>
+  <div class="szup" style="position:fixed; z-index:41; top:0; right:0; bottom:0; width:min(420px,88vw); background:var(--bg); border-left:1px solid var(--line1); padding:26px 24px; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <span class="mono" style="font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--mut2);">Account</span>
+      <span onClick="{{ closeAccount }}" class="mono" style="font-size:11px; color:var(--mut2); cursor:pointer; letter-spacing:0.1em;">CLOSE ✕</span>
+    </div>
+
+    <!-- intro -->
+    <sc-if value="{{ pkIntro }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:40px;">
+      <h2 style="font-size:30px; font-weight:700; letter-spacing:-0.03em; line-height:1.05; color:var(--ink);">Start your Space&nbsp;Zero account.</h2>
+      <p style="margin-top:14px; font-size:15px; line-height:1.55; color:var(--mut1);">One passkey keeps your trips, authority limits and recovery history in sync. No password to lose.</p>
+      <button onClick="{{ startCreate }}" class="szhov" style="margin-top:26px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:#E4572E; color:#fff; font-weight:700; font-size:15px; padding:16px; border:none; border-radius:12px; cursor:pointer;">Create with passkey</button>
+      <button onClick="{{ startSignin }}" class="szhov" style="margin-top:10px; width:100%; background:transparent; color:var(--ink); font-weight:600; font-size:14px; padding:14px; border:1px solid var(--line1); border-radius:12px; cursor:pointer;">I already have one</button>
+      <div class="mono" style="margin-top:22px; font-size:10px; letter-spacing:0.1em; color:var(--mut3); line-height:1.7;">
+        <div style="display:flex; justify-content:space-between; border-top:1px solid var(--line2); padding:12px 0;"><span>ENCRYPTED</span><span style="color:var(--mut2);">DEVICE-BOUND</span></div>
+        <div style="display:flex; justify-content:space-between; border-top:1px solid var(--line2); padding:12px 0;"><span>NO PASSWORD</span><span style="color:var(--mut2);">NOTHING TO STEAL</span></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- success -->
+    <sc-if value="{{ pkDone }}">
+    <div class="szup" style="margin-top:52px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+      <div style="width:70px; height:70px; border-radius:100px; background:var(--accent); display:flex; align-items:center; justify-content:center; animation:szPop .5s cubic-bezier(.22,.61,.36,1) both;">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:30; stroke-dashoffset:30; animation:szDraw .45s .25s cubic-bezier(.65,0,.35,1) forwards;"><path d="M4 12.5l5 5L20 6.5"></path></svg>
+      </div>
+      <h2 style="margin-top:26px; font-size:30px; font-weight:700; letter-spacing:-0.03em; line-height:1.04; color:var(--ink);">{{ doneTitle }}</h2>
+      <p style="margin-top:13px; max-width:300px; font-size:15px; line-height:1.55; color:var(--mut1);">{{ doneBody }}</p>
+      <div class="mono" style="margin-top:22px; display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--mut2); border:1px solid var(--line1); border-radius:100px; padding:9px 15px;">
+        <span style="width:6px; height:6px; border-radius:100px; background:var(--accent);"></span>{{ doneMeta }}
+      </div>
+      <button onClick="{{ closeAccount }}" class="szhov" style="margin-top:32px; width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:var(--ink); color:var(--bg); font-weight:600; font-size:15px; padding:16px; border:none; border-radius:100px; cursor:pointer;">{{ doneCta }} →</button>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ============ DEVICE PASSKEY SHEET ============ -->
+  <sc-if value="{{ sheetOpen }}">
+  <div style="position:fixed; inset:0; z-index:50; background:var(--scrim); backdrop-filter:blur(3px); animation:szFade .25s ease both;"></div>
+  <div style="position:fixed; z-index:51; left:0; right:0; bottom:0; animation:szSheet .42s cubic-bezier(.22,.61,.36,1) both;">
+    <div style="max-width:520px; margin:0 auto; background:var(--sheet); border:1px solid var(--line1); border-bottom:none; border-radius:24px 24px 0 0; padding:14px 22px 30px; box-shadow:0 -24px 60px rgba(0,0,0,.4);">
+      <div style="width:38px; height:4px; border-radius:100px; background:var(--line1); margin:0 auto 20px;"></div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:11px; background:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span style="font-weight:800; font-size:13px; letter-spacing:0.04em; color:#fff;">S0</span>
+        </div>
+        <div style="min-width:0;">
+          <div style="font-weight:600; font-size:15px; color:var(--ink); line-height:1.2;">{{ sheetTitle }}</div>
+          <div class="mono" style="font-size:11px; color:var(--mut2); letter-spacing:0.02em; margin-top:2px;">spacezero.app</div>
+        </div>
+      </div>
+      <div style="margin-top:20px; border:1px solid var(--line1); border-radius:14px; padding:15px 16px; display:flex; align-items:center; gap:13px; background:var(--surface);">
+        <div style="width:34px; height:34px; border-radius:100px; background:var(--surface2); border:1px solid var(--line1); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--mut1);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:600; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">alex.mercer@hey.com</div>
+          <div class="mono" style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--mut3); margin-top:2px;">{{ sheetCredMeta }}</div>
+        </div>
+        <span class="mono" style="font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--mut2); border:1px solid var(--line1); border-radius:100px; padding:4px 9px; flex-shrink:0;">This device</span>
+      </div>
+      <div style="margin-top:24px; display:flex; flex-direction:column; align-items:center;">
+        <div style="position:relative; width:88px; height:88px; display:flex; align-items:center; justify-content:center;">
+          <sc-if value="{{ isScanning }}">
+            <span style="position:absolute; inset:0; border-radius:26px; border:2px solid var(--accent); animation:szRing 1.4s ease-out infinite;"></span>
+            <span style="position:absolute; left:14%; right:14%; height:2px; background:var(--accent); box-shadow:0 0 12px var(--accent); border-radius:2px; animation:szScan 1.4s ease-in-out infinite;"></span>
+          </sc-if>
+          <div style="width:72px; height:72px; border-radius:22px; border:2px solid {{ faceColor }}; display:flex; align-items:center; justify-content:center; transition:border-color .3s ease;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="{{ faceColor }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke .3s ease;"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"></path><path d="M9 10v1M15 10v1M12 10v3l-1 1"></path><path d="M9 15s1 1 3 1 3-1 3-1"></path></svg>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:16px; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:{{ faceColor }}; transition:color .3s ease;">{{ scanLabel }}</div>
+      </div>
+      <div style="margin-top:26px; display:flex; flex-direction:column; gap:9px;">
+        <button onClick="{{ confirmSheet }}" disabled="{{ scanBusy }}" class="szhov" style="width:100%; background:var(--accent); color:#fff; font-weight:700; font-size:15px; padding:16px; border:none; border-radius:12px; cursor:pointer; opacity:{{ confirmOpacity }};">{{ sheetCta }}</button>
+        <button onClick="{{ closeSheet }}" class="szhov" style="width:100%; background:transparent; color:var(--mut2); font-weight:600; font-size:13px; padding:11px; border:none; cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;390px&quot;,&quot;height&quot;:&quot;844px&quot;}}">
+class Component extends DCLogic {
+  state = { briefText: '', historyOpen: false, accountOpen: false, theme: 'dark', hasAccount: false, pkMode: 'idle', pkPhase: 'intro', pkScan: 'ready' };
+  // pkPhase: intro | sheet | done ; pkMode: create | signin ; pkScan: ready | scanning | ok
+
+  componentDidMount() { this._syncBody(); }
+  componentDidUpdate(pp, ps) { if (ps.theme !== this.state.theme) this._syncBody(); }
+  _syncBody() { try { document.body.style.background = this.state.theme === 'light' ? '#F4F2EC' : '#0E0F11'; } catch (e) {} }
+
+  toggleTheme() { this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })); }
+
+  componentWillUnmount() { clearTimeout(this._t1); clearTimeout(this._t2); }
+  openSheet(mode) { this.setState({ pkMode: mode, pkPhase: 'sheet', pkScan: 'ready' }); }
+  closeSheet() { clearTimeout(this._t1); clearTimeout(this._t2); this.setState({ pkPhase: 'intro', pkScan: 'ready' }); }
+  confirmPk() {
+    if (this.state.pkScan !== 'ready') return;
+    this.setState({ pkScan: 'scanning' });
+    this._t1 = setTimeout(() => this.setState({ pkScan: 'ok' }), 1600);
+    this._t2 = setTimeout(() => this.setState({ pkPhase: 'done', pkScan: 'ready', hasAccount: true }), 2350);
+  }
+
+  renderVals() {
+    const { briefText, historyOpen, accountOpen, theme, hasAccount } = this.state;
+
+    const trips = [
+      { city: 'SYDNEY', dates: '14 OCT — 28 OCT', route: 'London → Singapore → Sydney', status: 'ACTIVE', color: '#E4572E', border: 'rgba(228,87,46,.4)' },
+      { city: 'LISBON', dates: '02 SEP — 06 SEP', route: 'Berlin → Lisbon', status: 'RESOLVED', color: 'var(--mut2)', border: 'var(--lineS)' },
+      { city: 'LONDON', dates: '20 AUG — 24 AUG', route: 'New York → London · recovered +£40', status: 'COMPLETED', color: 'var(--mut2)', border: 'var(--lineS)' },
+      { city: 'PARIS', dates: '01 AUG — 03 AUG', route: 'Madrid → Paris', status: 'COMPLETED', color: 'var(--mut2)', border: 'var(--lineS)' },
+    ];
+
+    return {
+      theme, isDark: theme === 'dark', isLight: theme === 'light',
+      toggleTheme: () => this.toggleTheme(),
+      briefText,
+      onBrief: e => this.setState({ briefText: e.target.value }),
+      sendBrief: () => { window.location.href = './TripPlan.dc.html'; },
+      noop: () => {},
+      hasAccount, noAccount: !hasAccount,
+      historyOpen,
+      openHistory: () => this.setState({ historyOpen: true, accountOpen: false }),
+      closeHistory: () => this.setState({ historyOpen: false }),
+      accountOpen,
+      openAccount: () => this.setState({ accountOpen: true, historyOpen: false, pkPhase: 'intro', pkScan: 'ready' }),
+      closeAccount: () => { clearTimeout(this._t1); clearTimeout(this._t2); this.setState({ accountOpen: false }); },
+
+      pkIntro: this.state.pkPhase === 'intro',
+      pkDone: this.state.pkPhase === 'done',
+      sheetOpen: this.state.pkPhase === 'sheet',
+      startCreate: () => this.openSheet('create'),
+      startSignin: () => this.openSheet('signin'),
+      closeSheet: () => this.closeSheet(),
+      confirmSheet: () => this.confirmPk(),
+      sheetTitle: this.state.pkMode === 'create' ? 'Create a passkey' : 'Sign in with passkey',
+      sheetCredMeta: this.state.pkMode === 'create' ? 'New passkey' : 'Saved \u00b7 last used 2d ago',
+      sheetCta: this.state.pkScan === 'ok' ? 'Done' : this.state.pkScan === 'scanning' ? 'Verifying\u2026' : (this.state.pkMode === 'create' ? 'Save passkey' : 'Continue'),
+      isScanning: this.state.pkScan === 'scanning',
+      scanBusy: this.state.pkScan === 'scanning',
+      confirmOpacity: this.state.pkScan === 'scanning' ? 0.55 : 1,
+      faceColor: this.state.pkScan === 'ready' ? 'var(--mut3)' : 'var(--accent)',
+      scanLabel: this.state.pkScan === 'ok' ? 'Verified' : this.state.pkScan === 'scanning' ? 'Scanning\u2026' : (this.state.pkMode === 'create' ? 'Look to save passkey' : 'Look to sign in'),
+      doneTitle: this.state.pkMode === 'create' ? "You're all set." : 'Welcome back, Alex.',
+      doneBody: this.state.pkMode === 'create'
+        ? 'Your passkey is saved to this device. Space Zero can now hold your trips and act within the limits you set.'
+        : 'Your trips, authority limits and recovery history are back in sync.',
+      doneMeta: this.state.pkMode === 'create' ? 'PASSKEY SAVED \u00b7 DEVICE-BOUND' : 'IDENTITY VERIFIED',
+      doneCta: this.state.pkMode === 'create' ? 'Brief your first trip' : 'Go to my trips',
+      trips,
+    };
+  }
+}
+</script>
+</body>
+</html>

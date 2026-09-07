@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  [data-theme=dark]{ --bg:#0E0F11; --bgr:14,15,17; --surface:#121417; --surface2:#141619; --ink:#EDEBE6; --ink2:#C6CBD1; --mut1:#9BA0A6; --mut2:#8A9099; --mut3:#5E646B; --mut4:#3F4349; --line1:#23262B; --line2:#1B1E22; --line3:#16191C; --lineS:#2A2E33; --bubble:#141619; }
+  [data-theme=light]{ --bg:#F4F2EC; --bgr:244,242,236; --surface:#FBFAF6; --surface2:#ECEAE2; --ink:#17181A; --ink2:#33363A; --mut1:#5E646B; --mut2:#6C727A; --mut3:#8B9199; --mut4:#B7BCC2; --line1:#DED9CD; --line2:#E7E3D9; --line3:#EDEAE1; --lineS:#D1CCC0; --bubble:#ECEAE2; }
+  :root{ --accent:#E4572E; }
+  body { background:#0E0F11; color:#EDEBE6; font-family:'Schibsted Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  a { color:#E4572E; text-decoration:none; } a:hover { color:#F06B45; }
+  ::selection { background:#E4572E; color:#fff; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  .szhov { transition:color .15s ease, background .15s ease, border-color .15s ease, box-shadow .2s ease; }
+  @keyframes szUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .szup { animation:szUp .5s cubic-bezier(.22,.61,.36,1) both; }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh; background:var(--bg); color:var(--ink); display:flex; flex-direction:column;">
+
+  <div style="position:sticky; top:0; z-index:30; background:rgba(var(--bgr),.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--line3);">
+    <div style="max-width:680px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <a href="./TripPlan.dc.html" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; display:flex; align-items:center; justify-content:center;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+      </a>
+      <span style="font-weight:700; font-size:12px; letter-spacing:0.2em; text-transform:uppercase;">Space&nbsp;Zero</span>
+      <button onClick="{{ toggleTheme }}" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path></svg></sc-if>
+        <sc-if value="{{ isLight }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="flex:1; max-width:680px; width:100%; margin:0 auto; padding:24px 20px 130px;">
+
+    <div class="szup" style="display:flex; gap:11px; align-items:flex-start;">
+      <div style="width:30px; height:30px; border-radius:9px; background:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span style="font-weight:800; font-size:11px; color:#fff;">S0</span></div>
+      <p style="flex:1; padding-top:3px; font-size:16px; line-height:1.5; color:var(--ink);">Three journeys clear your 10:00 Friday arrival, all within £1,500. I recommend the first.</p>
+    </div>
+
+    <div style="margin-top:22px; display:flex; flex-direction:column; gap:12px;">
+      <sc-for list="{{ options }}" as="o" hint-placeholder-count="3">
+        <div onClick="{{ o.select }}" class="szup szhov" style="border:1.5px solid {{ o.border }}; box-shadow:{{ o.shadow }}; border-radius:16px; background:var(--surface); padding:18px; cursor:pointer;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px;">
+            <span class="mono" style="display:inline-flex; align-items:center; gap:6px; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:{{ o.tagColor }}; border:1px solid {{ o.tagBorder }}; border-radius:100px; padding:5px 11px;">
+              <sc-if value="{{ o.recommended }}"><span style="width:5px; height:5px; border-radius:100px; background:var(--accent);"></span></sc-if>{{ o.tag }}
+            </span>
+            <div style="text-align:right; flex-shrink:0;">
+              <div class="mono" style="font-size:24px; font-weight:700; letter-spacing:-0.01em; color:var(--ink); line-height:1;">{{ o.cost }}</div>
+              <div class="mono" style="font-size:10px; letter-spacing:0.04em; color:var(--mut3); margin-top:4px;">total, all legs</div>
+            </div>
+          </div>
+
+          <div class="mono" style="margin-top:16px; display:flex; align-items:center; gap:9px; font-size:15px; font-weight:600; color:var(--ink2);">
+            <span>{{ o.a }}</span><span style="color:var(--mut3);">→</span><span>{{ o.b }}</span><span style="color:var(--mut3);">→</span><span>{{ o.c }}</span>
+          </div>
+          <div class="mono" style="margin-top:7px; font-size:11px; letter-spacing:0.02em; color:var(--mut2); display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+            <span>{{ o.time }}</span><span style="color:var(--mut4);">·</span><span>{{ o.stops }}</span><span style="color:var(--mut4);">·</span><span>via {{ o.via }}</span>
+          </div>
+
+          <div style="margin-top:14px; padding-top:13px; border-top:1px solid var(--line2); display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 12.5l5 5L20 6.5"></path></svg>
+              <span class="mono" style="font-size:12px; color:var(--ink2);">Arrives {{ o.arrive }}</span>
+            </div>
+            <div style="width:22px; height:22px; border-radius:100px; border:1.5px solid {{ o.radioBorder }}; background:{{ o.radioBg }}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+              <sc-if value="{{ o.selected }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg></sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div class="mono" style="margin-top:18px; font-size:11px; letter-spacing:0.02em; color:var(--mut3); line-height:1.6;">Prices priced live through the travel layer. I hold the fare while you authorize.</div>
+  </div>
+
+  <div style="position:sticky; bottom:0; z-index:20; background:linear-gradient(to top, var(--bg) 62%, rgba(var(--bgr),0)); padding:22px 20px calc(22px + env(safe-area-inset-bottom));">
+    <div style="max-width:680px; margin:0 auto;">
+      <a href="./Authorization.dc.html" class="szhov" style="width:100%; display:flex; align-items:center; justify-content:center; gap:9px; background:var(--ink); color:var(--bg); font-weight:600; font-size:15px; padding:17px; border:none; border-radius:100px;">Select this itinerary →</a>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;390px&quot;,&quot;height&quot;:&quot;844px&quot;}}">
+class Component extends DCLogic {
+  state = { theme:'dark', selected:0 };
+  componentDidMount(){ this._syncBody(); }
+  componentDidUpdate(pp,ps){ if(ps.theme!==this.state.theme) this._syncBody(); }
+  _syncBody(){ try{ document.body.style.background = this.state.theme==='light'?'#F4F2EC':'#0E0F11'; }catch(e){} }
+  toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+
+  renderVals(){
+    const { theme, selected } = this.state;
+    const raw = [
+      { tag:'Recommended', recommended:true, cost:'£1,468', a:'LHR', b:'SIN', c:'SYD', time:'22h 05m', stops:'1 stop', via:'Singapore', arrive:'08:40 Fri', note:'Fastest within budget' },
+      { tag:'Cheapest', recommended:false, cost:'£1,190', a:'LHR', b:'DXB', c:'SYD', time:'24h 40m', stops:'1 stop', via:'Dubai', arrive:'09:15 Fri', note:'' },
+      { tag:'Earliest arrival', recommended:false, cost:'£1,495', a:'LHR', b:'DOH', c:'SYD', time:'20h 15m', stops:'1 stop', via:'Doha', arrive:'07:30 Fri', note:'' },
+    ];
+    const options = raw.map((o,i)=>{
+      const sel = i===selected;
+      return { ...o, selected:sel, select:()=>this.setState({selected:i}),
+        border: sel ? 'var(--accent)' : (o.recommended ? 'rgba(228,87,46,.4)' : 'var(--line1)'),
+        shadow: sel ? '0 0 0 4px rgba(228,87,46,.14)' : 'none',
+        tagColor: o.recommended ? 'var(--accent)' : 'var(--mut2)',
+        tagBorder: o.recommended ? 'rgba(228,87,46,.4)' : 'var(--lineS)',
+        radioBorder: sel ? 'var(--accent)' : 'var(--line1)',
+        radioBg: sel ? 'var(--accent)' : 'transparent',
+      };
+    });
+    return { theme, isDark:theme==='dark', isLight:theme==='light', toggleTheme:()=>this.toggleTheme(), options };
+  }
+}
+</script>
+</body>
+</html>

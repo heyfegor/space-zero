@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  [data-theme=dark]{ --bg:#0E0F11; --bgr:14,15,17; --surface:#121417; --surface2:#141619; --ink:#EDEBE6; --ink2:#C6CBD1; --mut1:#9BA0A6; --mut2:#8A9099; --mut3:#5E646B; --mut4:#3F4349; --line1:#23262B; --line2:#1B1E22; --line3:#16191C; --lineS:#2A2E33; }
+  [data-theme=light]{ --bg:#F4F2EC; --bgr:244,242,236; --surface:#FBFAF6; --surface2:#ECEAE2; --ink:#17181A; --ink2:#33363A; --mut1:#5E646B; --mut2:#6C727A; --mut3:#8B9199; --mut4:#B7BCC2; --line1:#DED9CD; --line2:#E7E3D9; --line3:#EDEAE1; --lineS:#D1CCC0; }
+  :root{ --accent:#E4572E; }
+  body { background:#0E0F11; color:#EDEBE6; font-family:'Schibsted Grotesk',system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+  a { color:#E4572E; text-decoration:none; } a:hover { color:#F06B45; }
+  ::selection { background:#E4572E; color:#fff; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  .szhov { transition:color .15s ease, background .15s ease, border-color .15s ease; }
+  @keyframes szUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes szSpin { to { transform:rotate(360deg); } }
+  @keyframes szPulse { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+  @keyframes szPop { 0% { transform:scale(.4); opacity:0; } 60% { transform:scale(1.1); } 100% { transform:scale(1); opacity:1; } }
+  @keyframes szDraw { to { stroke-dashoffset:0; } }
+  .szup { animation:szUp .5s cubic-bezier(.22,.61,.36,1) both; }
+  .szspin { animation:szSpin .9s linear infinite; }
+  .szpulse { animation:szPulse 1.6s ease-in-out infinite; }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh; background:var(--bg); color:var(--ink); display:flex; flex-direction:column;">
+
+  <div style="position:sticky; top:0; z-index:30; background:rgba(var(--bgr),.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--line3);">
+    <div style="max-width:680px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <span style="font-weight:700; font-size:12px; letter-spacing:0.2em; text-transform:uppercase;">Space&nbsp;Zero</span>
+      <button onClick="{{ toggleTheme }}" class="szhov" style="background:transparent; border:1px solid var(--line1); color:var(--mut1); width:32px; height:32px; border-radius:100px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"></path></svg></sc-if>
+        <sc-if value="{{ isLight }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <div style="flex:1; max-width:680px; width:100%; margin:0 auto; padding:34px 22px 60px; width:100%;">
+
+    <div class="mono" style="display:flex; align-items:center; gap:9px; font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent);">
+      <span class="szpulse" style="width:7px; height:7px; border-radius:100px; background:var(--accent);"></span>{{ stateLabel }}
+    </div>
+    <h1 style="margin-top:16px; font-size:clamp(30px,8.5vw,40px); line-height:1.05; font-weight:700; letter-spacing:-0.035em;">{{ headline }}</h1>
+    <p style="margin-top:12px; font-size:15px; line-height:1.55; color:var(--mut1);">{{ sub }}</p>
+
+    <!-- timeline -->
+    <div style="margin-top:34px;">
+      <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+        <div style="display:flex; gap:15px; align-items:flex-start;">
+          <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+            <div style="width:30px; height:30px; border-radius:100px; border:1.5px solid {{ s.ringBorder }}; background:{{ s.ringBg }}; display:flex; align-items:center; justify-content:center;">
+              <sc-if value="{{ s.done }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:30; stroke-dashoffset:30; animation:szDraw .4s ease forwards;"><path d="M4 12.5l5 5L20 6.5"></path></svg></sc-if>
+              <sc-if value="{{ s.active }}"><span class="szspin" style="width:15px; height:15px; border-radius:100px; border:2px solid var(--accent); border-top-color:transparent;"></span></sc-if>
+              <sc-if value="{{ s.pending }}"><span style="width:7px; height:7px; border-radius:100px; background:var(--mut4);"></span></sc-if>
+            </div>
+            <sc-if value="{{ s.notLast }}"><div style="width:1.5px; height:34px; background:{{ s.lineBg }};"></div></sc-if>
+          </div>
+          <div style="padding-top:4px; padding-bottom:20px;">
+            <div style="font-size:16px; font-weight:600; color:{{ s.textColor }};">{{ s.label }}</div>
+            <div class="mono" style="font-size:11px; letter-spacing:0.02em; color:var(--mut3); margin-top:4px;">{{ s.detail }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- confirmation -->
+    <sc-if value="{{ finished }}">
+    <div style="margin-top:8px; border:1px solid var(--line1); border-radius:16px; background:var(--surface); padding:20px; animation:szUp .5s cubic-bezier(.22,.61,.36,1) both;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:40px; height:40px; border-radius:100px; background:var(--accent); display:flex; align-items:center; justify-content:center; animation:szPop .5s cubic-bezier(.22,.61,.36,1) both;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"></path></svg>
+        </div>
+        <div>
+          <div style="font-size:18px; font-weight:700; color:var(--ink);">Booked and monitoring.</div>
+          <div class="mono" style="font-size:11px; color:var(--mut2); margin-top:3px;">Booking SZ 4821 · LHR → SIN → SYD</div>
+        </div>
+      </div>
+      <p style="margin-top:15px; font-size:14px; line-height:1.5; color:var(--ink2);">You're set. I'll watch every segment and act within your limits if anything changes. You don't need to stay here.</p>
+      <a href="./Trips.dc.html" class="szhov" style="margin-top:18px; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; background:var(--ink); color:var(--bg); font-weight:600; font-size:15px; padding:15px; border:none; border-radius:100px;">View trip →</a>
+      <a href="./Disruption.dc.html" class="szhov mono" style="margin-top:12px; display:flex; align-items:center; justify-content:center; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--mut3);">Demo: simulate a disruption</a>
+    </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;390px&quot;,&quot;height&quot;:&quot;844px&quot;}}">
+class Component extends DCLogic {
+  state = { theme:'dark', step:0 };
+  _defs = [
+    { label:'Searching flights', detail:'Querying live fares across carriers' },
+    { label:'Comparing options', detail:'Ranking on cost, time and arrival' },
+    { label:'Booking flight', detail:'Placing the order with the travel layer' },
+    { label:'Confirming payment', detail:'Charging within your £1,500 budget' },
+    { label:'Monitoring trip', detail:'Watching every segment for changes' },
+  ];
+
+  componentDidMount(){ this._syncBody(); this._tick(); }
+  componentDidUpdate(pp,ps){ if(ps.theme!==this.state.theme) this._syncBody(); }
+  _syncBody(){ try{ document.body.style.background = this.state.theme==='light'?'#F4F2EC':'#0E0F11'; }catch(e){} }
+  componentWillUnmount(){ clearTimeout(this._t); }
+  _tick(){ if(this.state.step >= this._defs.length) return; this._t = setTimeout(()=>{ this.setState(s=>({step:s.step+1})); this._tick(); }, 1300); }
+  toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+
+  renderVals(){
+    const { theme, step } = this.state;
+    const n = this._defs.length;
+    const finished = step >= n;
+    const steps = this._defs.map((d,i)=>{
+      const done = i<step, active = i===step && !finished, pending = i>step;
+      return { ...d, done, active, pending, notLast:i<n-1,
+        ringBorder: done||active ? 'var(--accent)' : 'var(--line1)',
+        ringBg: done ? 'var(--accent)' : 'transparent',
+        lineBg: done ? 'var(--accent)' : 'var(--line1)',
+        textColor: pending ? 'var(--mut3)' : 'var(--ink)' };
+    });
+    return {
+      theme, isDark:theme==='dark', isLight:theme==='light', toggleTheme:()=>this.toggleTheme(),
+      steps, finished,
+      stateLabel: finished ? 'Monitoring your trip' : 'Booking your journey',
+      headline: finished ? 'Your trip is running.' : 'Executing your trip.',
+      sub: finished ? 'Space Zero has the journey. It stays on it in the background.' : 'I am putting the approved journey in place. This takes a moment.',
+    };
+  }
+}
+</script>
+</body>
+</html>

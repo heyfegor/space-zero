@@ -1,0 +1,30 @@
+{
+  "name": "space-zero",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "verify:strands": "node scripts/verify-strands.ts",
+    "test": "node --import tsx --test src/domain/authority.test.ts src/domain/trip-state.test.ts src/domain/booking.test.ts src/domain/funding.test.ts src/server/tools/tools.test.ts src/server/agent-api.test.ts src/server/trips/trips.test.ts src/server/trips/funding-service.test.ts src/server/flights/flights.test.ts src/server/booking/booking.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.109.1",
+    "@strands-agents/sdk": "1.16.0",
+    "@supabase/supabase-js": "2.115.0",
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  }
+}
