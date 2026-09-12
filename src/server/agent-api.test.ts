@@ -68,10 +68,13 @@ test("B: the Space Zero tools are registered", () => {
   const names = spaceZeroTools.map((t) => t.name).sort();
   assert.deepEqual(names, [
     "check_authority",
+    "evaluate_recovery_options",
     "execute_booking",
+    "get_recovery_context",
     "get_trip",
     "recover_trip",
     "search_flights",
+    "search_recovery_options",
   ]);
 });
 
@@ -116,6 +119,25 @@ test("E: user-safe errors never leak keys, secrets, or raw messages", () => {
   assert.ok(!provider.message.includes("sk-ant"));
   assert.ok(!leaky.message.includes("sk-ant"));
   assert.ok(!leaky.message.includes("C:\\"));
+
+  // A configured-but-unavailable model provider (e.g. Bedrock model access
+  // denied / EOL / verification pending / endpoint unreachable) is honest
+  // downtime, not a generic agent error — and must never leak provider detail.
+  for (const msg of [
+    "ValidationException: Operation not allowed",
+    "This model version has reached the end of its life.",
+    "Your account is currently being verified.",
+    "getaddrinfo EAI_AGAIN bedrock-runtime.us-east-1.amazonaws.com",
+    // A model-provider rate-limit / quota exhaustion (e.g. a Gemini 429) is
+    // honest downtime, not a generic agent error.
+    '{"error":{"code":429,"message":"You exceeded your current quota, please check your plan and billing details."}}',
+    "RESOURCE_EXHAUSTED: Too many requests",
+  ]) {
+    const down = toUserSafeError(new Error(msg));
+    assert.equal(down.code, "PROVIDER_UNAVAILABLE");
+    assert.ok(!down.message.includes("bedrock"));
+    assert.ok(!/amazonaws|Exception/i.test(down.message));
+  }
 });
 
 // The user's slider-set recovery allowance is validated and applied as a

@@ -14,13 +14,14 @@
 import { AnthropicModel } from "@strands-agents/sdk/models/anthropic";
 import type { Model } from "@strands-agents/sdk";
 
-export type ModelProvider = "anthropic" | "openai" | "bedrock";
+export type ModelProvider = "anthropic" | "openai" | "bedrock" | "google";
 
 function providerFromEnv(): ModelProvider {
   const raw = (process.env.MODEL_PROVIDER ?? "anthropic").toLowerCase();
-  if (raw === "anthropic" || raw === "openai" || raw === "bedrock") return raw;
+  if (raw === "anthropic" || raw === "openai" || raw === "bedrock" || raw === "google")
+    return raw;
   throw new Error(
-    `Unknown MODEL_PROVIDER "${raw}". Expected "anthropic", "openai", or "bedrock".`,
+    `Unknown MODEL_PROVIDER "${raw}". Expected "anthropic", "openai", "bedrock", or "google".`,
   );
 }
 
@@ -61,9 +62,35 @@ export async function getModel(): Promise<Model> {
     }
 
     case "bedrock": {
-      // Later path: requires AWS account access. Not on the dev critical path.
+      // Requires AWS account access + Bedrock model access. Credentials come from
+      // the AWS default provider chain (env, SSO, shared config). The region is
+      // passed explicitly so the app does not silently depend on ambient AWS_REGION.
       const { BedrockModel } = await import("@strands-agents/sdk/models/bedrock");
-      return new BedrockModel({ modelId: modelId(), maxTokens: maxTokens() });
+      const region = process.env.AWS_REGION;
+      if (!region) {
+        throw new Error(
+          "AWS_REGION is not set but MODEL_PROVIDER=bedrock. Add it to .env.local (see .env.example).",
+        );
+      }
+      return new BedrockModel({ region, modelId: modelId(), maxTokens: maxTokens() });
+    }
+
+    case "google": {
+      // Temporary provider. Optional dependency — only needed when selected.
+      const { GoogleModel } = await import("@strands-agents/sdk/models/google");
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "GEMINI_API_KEY is not set but MODEL_PROVIDER=google. Add it to .env.local (see .env.example).",
+        );
+      }
+      // Never reuse the Anthropic default model id here; Gemini needs a Gemini id,
+      // and its max-output knob lives under params (not a top-level maxTokens).
+      return new GoogleModel({
+        apiKey,
+        modelId: process.env.MODEL_ID ?? "gemini-3.6-flash",
+        params: { maxOutputTokens: maxTokens() },
+      });
     }
   }
 }

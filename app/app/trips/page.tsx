@@ -8,13 +8,51 @@
  * so a real store (users' trips) can replace it without changing the layout.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFlow, money } from "../_lib/flow";
+import { fetchMonitoring, type MonitoringView } from "../_lib/trip-client";
 import { PageHeader } from "../_components/PageHeader";
 import { Wordmark, BackButton, Clock, Warn, ChevronRight, Check } from "../_components/ui";
 
 type Filter = "all" | "active" | "completed";
+
+/** Read persisted monitoring for the active trip (null until a trip id is known). */
+function useMonitoring(tripId: string | null): MonitoringView | null {
+  const [view, setView] = useState<MonitoringView | null>(null);
+  useEffect(() => {
+    if (!tripId) { setView(null); return; }
+    let cancelled = false;
+    fetchMonitoring(tripId)
+      .then((m) => { if (!cancelled) setView(m); })
+      .catch(() => { if (!cancelled) setView(null); });
+    return () => { cancelled = true; };
+  }, [tripId]);
+  return view;
+}
+
+/** The active-trip footer line, honest about the real monitoring state. */
+function activeFooter(
+  monitoring: MonitoringView | null,
+  primary: { summary: string } | null,
+): string {
+  if (!monitoring) return "Boarding pass ready · check-in complete"; // demo
+  if (monitoring.threatened && primary) return primary.summary;
+  if (!monitoring.monitored) return "Not yet monitored · awaiting a confirmed booking";
+  if (!monitoring.providerConfigured) return "Monitoring unavailable · flight tracker not configured";
+  return "Monitoring live · no disruptions detected";
+}
+
+function relTime(iso: string | null): string {
+  if (!iso) return "live";
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "live";
+  const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const h = Math.floor(mins / 60);
+  return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+}
 
 const PAST = [
   { city: "Lisbon", status: "RESOLVED", kind: "active", dates: "02 Sep — 06 Sep", route: "Berlin → Lisbon · direct", cost: "€340", travelers: "1 traveler", note: null as string | null },
@@ -27,6 +65,28 @@ export default function Trips() {
   const router = useRouter();
   const { authority, selectedOption } = useFlow();
   const [filter, setFilter] = useState<Filter>("all");
+
+  // When opened with ?trip=<id>, the active trip reflects REAL persisted
+  // monitoring/disruption state; without one it stays the scripted demo.
+  const [tripId, setTripId] = useState<string | null>(null);
+  useEffect(() => {
+    try { setTripId(new URLSearchParams(window.location.search).get("trip")); } catch { setTripId(null); }
+  }, []);
+  const monitoring = useMonitoring(tripId);
+
+  // Derive the monitoring pill + decision banner from real data when present.
+  const atRisk = monitoring?.threatened ?? false;
+  const monitorLabel = !monitoring
+    ? "Monitoring · live"
+    : atRisk
+      ? "At risk · action needed"
+      : monitoring.monitored && !monitoring.providerConfigured
+        ? "Monitoring · unavailable"
+        : monitoring.monitored
+          ? "Monitoring · live"
+          : "Not yet monitored";
+  const primaryDisruption = monitoring?.disruptions.find((d) => d.threatensTrip) ?? null;
+  const openActive = () => router.push(tripId ? `/app/disruption?trip=${encodeURIComponent(tripId)}` : "/app/execution");
 
   const showActive = filter === "all" || filter === "active";
   let past = PAST;
@@ -52,12 +112,12 @@ export default function Trips() {
 
         {/* ACTIVE TRIP */}
         {showActive && (
-          <div className="sz-up sz-row sz-hover" onClick={() => router.push("/app/execution")} style={{ marginTop: 22, border: "1px solid var(--line)", borderRadius: 18, background: "var(--surface)", overflow: "hidden", cursor: "pointer" }}>
+          <div className="sz-up sz-row sz-hover" onClick={openActive} style={{ marginTop: 22, border: "1px solid var(--line)", borderRadius: 18, background: "var(--surface)", overflow: "hidden", cursor: "pointer" }}>
             <div style={{ padding: "20px 20px 18px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div>
-                  <div className="mono" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--accent)" }}>
-                    <span className="sz-soft" style={{ width: 6, height: 6, borderRadius: 100, background: "var(--accent)" }} />Monitoring · live
+                  <div className="mono" style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: atRisk ? "var(--accent)" : monitoring && !monitoring.providerConfigured ? "var(--muted-2)" : "var(--accent)" }}>
+                    <span className="sz-soft" style={{ width: 6, height: 6, borderRadius: 100, background: atRisk ? "var(--accent)" : "var(--muted-2)" }} />{monitorLabel}
                   </div>
                   <div style={{ marginTop: 12, fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1, color: "var(--ink)" }}>Sydney</div>
                   <div className="mono" style={{ marginTop: 9, fontSize: 12, letterSpacing: "0.02em", color: "var(--muted-2)" }}>04 Sep — 18 Sep · 1 traveler</div>
@@ -74,17 +134,27 @@ export default function Trips() {
               </div>
             </div>
             <div style={{ borderTop: "1px solid var(--line-2)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 11, background: "var(--surface-2)" }}>
-              <span style={{ color: "var(--accent)", flexShrink: 0, display: "flex" }}><Clock size={15} /></span>
+              <span style={{ color: atRisk ? "var(--accent)" : "var(--muted-2)", flexShrink: 0, display: "flex" }}>{atRisk ? <Warn /> : <Clock size={15} />}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink-2)", lineHeight: 1.35 }}>Boarding pass ready · check-in complete</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink-2)", lineHeight: 1.35 }}>{activeFooter(monitoring, primaryDisruption)}</div>
               </div>
-              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em", color: "var(--faint)", flexShrink: 0 }}>2h ago</span>
+              <span className="mono" style={{ fontSize: 10, letterSpacing: "0.06em", color: "var(--faint)", flexShrink: 0 }}>{monitoring ? relTime(monitoring.lastDisruptionAt) : "2h ago"}</span>
             </div>
           </div>
         )}
 
-        {/* DECISION NEEDED */}
-        {showActive && (
+        {/* DECISION NEEDED — real disruption when a trip is in context, else demo */}
+        {showActive && tripId && atRisk && primaryDisruption && (
+          <div className="sz-row sz-hover" onClick={() => router.push(`/app/disruption?trip=${encodeURIComponent(tripId)}`)} style={{ marginTop: 12, border: "1px solid rgba(228,87,46,.45)", borderRadius: 16, background: "var(--surface)", padding: "16px 18px", display: "flex", alignItems: "center", gap: 13, cursor: "pointer" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 100, background: "rgba(228,87,46,.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--accent)" }}><Warn /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="mono" style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--accent)" }}>Disruption detected</div>
+              <div style={{ marginTop: 4, fontSize: 14, fontWeight: 500, color: "var(--ink)", lineHeight: 1.35 }}>{primaryDisruption.summary} · flagged for recovery</div>
+            </div>
+            <span style={{ color: "var(--muted-2)", flexShrink: 0, display: "flex" }}><ChevronRight /></span>
+          </div>
+        )}
+        {showActive && !tripId && (
           <div className="sz-row sz-hover" onClick={() => router.push("/app/resolution")} style={{ marginTop: 12, border: "1px solid rgba(228,87,46,.45)", borderRadius: 16, background: "var(--surface)", padding: "16px 18px", display: "flex", alignItems: "center", gap: 13, cursor: "pointer" }}>
             <div style={{ width: 32, height: 32, borderRadius: 100, background: "rgba(228,87,46,.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--accent)" }}><Warn /></div>
             <div style={{ flex: 1, minWidth: 0 }}>

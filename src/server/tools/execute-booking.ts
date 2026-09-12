@@ -31,6 +31,7 @@ import { transition } from "../../domain/trip-state";
 import type { Trip } from "../../domain/trip";
 import { getTripRepository } from "../persistence/trip-repository";
 import { bookTrip } from "../booking/booking-service";
+import { runRecovery } from "../recovery/recovery-service";
 import { getTripById, putTrip } from "./dev-store";
 
 /**
@@ -83,6 +84,12 @@ export const executeBookingTool = tool({
     // which does its own authoritative verification and persistence.
     const persisted = await getTripRepository().getById(tripId);
     if (persisted) {
+      // A disrupted (at-risk) trip is a RECOVERY booking: the recovery choke
+      // point re-derives the alternatives and re-runs the deterministic
+      // authority/funding/eligibility checks itself before booking or escalating.
+      if (persisted.status === "AT_RISK" || persisted.status === "RECOVERING") {
+        return runRecovery(tripId);
+      }
       return bookTrip(tripId);
     }
 

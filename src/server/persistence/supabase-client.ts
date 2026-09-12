@@ -17,14 +17,17 @@ let client: SupabaseClient | null = null;
 
 export function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRoleKey) {
+  // Accept the new-style Supabase secret key (SUPABASE_SECRET_KEY, e.g.
+  // "sb_secret_…") and fall back to the legacy service-role JWT name. Both bypass
+  // RLS and must stay server-only.
+  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !secretKey) {
     throw new Error(
-      "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (server-only).",
+      "Supabase is not configured. Set SUPABASE_URL and SUPABASE_SECRET_KEY (server-only).",
     );
   }
   if (!client) {
-    client = createClient(url, serviceRoleKey, {
+    client = createClient(url, secretKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
   }

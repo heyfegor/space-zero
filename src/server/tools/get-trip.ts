@@ -1,10 +1,11 @@
 /**
- * Tool: get_trip — read-only. Returns the current trip state from the dev store.
+ * Tool: get_trip — read-only. Returns the current trip state, resolving a real
+ * persisted trip first and falling back to the in-memory staged/demo store.
  */
 
 import { tool } from "@strands-agents/sdk";
 import { z } from "zod";
-import { getTripById } from "./dev-store";
+import { resolveTrip } from "./resolve-trip";
 
 export const getTripTool = tool({
   name: "get_trip",
@@ -14,8 +15,8 @@ export const getTripTool = tool({
   inputSchema: z.object({
     tripId: z.string().describe("The trip id to fetch"),
   }),
-  callback: ({ tripId }) => {
-    const trip = getTripById(tripId);
+  callback: async ({ tripId }) => {
+    const trip = await resolveTrip(tripId);
     if (!trip) {
       return { found: false, tripId, reason: `No trip found for id ${tripId}.` };
     }

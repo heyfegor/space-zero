@@ -36,7 +36,10 @@ export const DEV_USER_EMAIL = "dev@spacezero.local";
 
 /** True when server-side Supabase credentials are configured. */
 export function isSupabaseConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  // Accept the new-style secret key (SUPABASE_SECRET_KEY) or the legacy
+  // service-role key name; either selects the Supabase-backed repositories.
+  const secretKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return Boolean(process.env.SUPABASE_URL && secretKey);
 }
 
 let inMemorySingleton: TripRepository | null = null;

@@ -9,8 +9,16 @@
  * metadata + the deterministic domain) and the final response — never the
  * model's hidden reasoning.
  *
- * GET  /api/agent                     -> health: active provider + key presence
- * POST /api/agent { brief, scenario } -> SSE stream of operational events
+ * Two run modes share this endpoint:
+ *   - PERSISTED: an explicit ?trip=<id> that exists in the persistence layer.
+ *     The agent runs on the REAL trip, with context built from its intent,
+ *     selected itinerary, funding, and authority. Outcomes are honest and
+ *     status-gated (no fabricated booking/payment/resolution).
+ *   - DEMO: the deterministic £96/£181 staged fixtures, selected by an explicit
+ *     `scenario`. These remain available and never silently replace a real trip.
+ *
+ * GET  /api/agent                              -> health: provider + key presence
+ * POST /api/agent { tripId } | { scenario }    -> SSE stream of operational events
  */
 
 import { activeProvider } from "@/src/agent/model";
@@ -18,12 +26,19 @@ import { buildAgent } from "@/src/agent/agent";
 import {
   parseAgentRequest,
   buildAgentPrompt,
+  buildPersistedAgentPrompt,
+  buildExecutionContext,
   eventsForToolCall,
+  eventsForPersistedToolCall,
   tripSummary,
+  persistedTripSummary,
   toUserSafeError,
   applyUserAuthority,
+  type OperationalEvent,
+  type TripSummary,
 } from "@/src/server/agent-api";
 import { getTripById, resetDemoTrip } from "@/src/server/tools/dev-store";
+import { getTripRepository } from "@/src/server/persistence/trip-repository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,11 +71,19 @@ export async function POST(req: Request) {
       { status: parsed.status },
     );
   }
-  const { brief, tripId, recoveryAllowance } = parsed.value;
-  // Fresh AT_RISK state each run so the demo is repeatable, then apply the
-  // user's delegated authority (from the Authority screen) up front.
-  resetDemoTrip(tripId);
-  applyUserAuthority(tripId, recoveryAllowance);
+  const { brief, tripId, recoveryAllowance, explicit } = parsed.value;
+
+  // Resolve a REAL persisted trip up front (an explicit ?trip=<id>). When found,
+  // the run operates on it; otherwise this is a deterministic demo fixture.
+  const persistedTrip = explicit ? await getTripRepository().getById(tripId) : null;
+
+  // Only the demo store is reset + re-authorized per run (so the £96/£181 demo is
+  // repeatable). A persisted trip's authority is already stored on the trip, so
+  // its state is never touched here.
+  if (!persistedTrip) {
+    resetDemoTrip(tripId);
+    applyUserAuthority(tripId, recoveryAllowance);
+  }
 
   const encoder = new TextEncoder();
   const send = (
@@ -78,19 +101,39 @@ export async function POST(req: Request) {
       try {
         send(controller, "stage", { stage: "RECEIVED", label: "Brief received" });
 
-        const trip = getTripById(tripId);
-        if (!trip) {
-          send(controller, "error", {
-            code: "INVALID_TRIP_STATE",
-            message: "That trip could not be found.",
-          });
-          return;
+        // Choose the run: a real persisted trip, or the deterministic demo.
+        let prompt: string;
+        let derive: (name: string, input: unknown) => Promise<OperationalEvent[]>;
+        let summarize: () => Promise<TripSummary | null>;
+
+        if (persistedTrip) {
+          const ctx = await buildExecutionContext(persistedTrip);
+          prompt = buildPersistedAgentPrompt(brief, persistedTrip, ctx);
+          // Re-read the persisted trip after each tool so events reflect its
+          // ACTUAL post-call state (bypass-proof, never model-supplied).
+          derive = async (name, input) =>
+            eventsForPersistedToolCall(
+              name,
+              input,
+              (await getTripRepository().getById(tripId)) ?? persistedTrip,
+            );
+          summarize = () => persistedTripSummary(tripId);
+        } else {
+          const trip = getTripById(tripId);
+          if (!trip) {
+            send(controller, "error", {
+              code: "INVALID_TRIP_STATE",
+              message: "That trip could not be found.",
+            });
+            return;
+          }
+          prompt = buildAgentPrompt(brief, trip);
+          derive = async (name, input) => eventsForToolCall(name, input, tripId);
+          summarize = async () => tripSummary(tripId);
         }
 
         // buildAgent() may throw if no model provider is configured — caught below.
         const agent = await buildAgent();
-        const prompt = buildAgentPrompt(brief, trip);
-
         const gen = agent.stream(prompt);
         let next = await gen.next();
         while (!next.done) {
@@ -100,7 +143,7 @@ export async function POST(req: Request) {
           };
           // Only tool-call boundaries produce user-safe operational events.
           if (evt.type === "afterToolCallEvent" && evt.toolUse?.name) {
-            for (const op of eventsForToolCall(evt.toolUse.name, evt.toolUse.input, tripId)) {
+            for (const op of await derive(evt.toolUse.name, evt.toolUse.input)) {
               send(controller, "stage", op);
             }
           }
@@ -120,7 +163,7 @@ export async function POST(req: Request) {
               .trim()
           : "";
 
-        send(controller, "done", { text, summary: tripSummary(tripId) });
+        send(controller, "done", { text, summary: await summarize() });
       } catch (err) {
         // Never leak stack traces / secrets.
         send(controller, "error", toUserSafeError(err));

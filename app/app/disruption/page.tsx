@@ -1,23 +1,263 @@
 "use client";
 
 /**
- * Space Zero — Disruption. Ported from Disruption.dc.html.
+ * Space Zero — Disruption.
  *
- * A deterministic demo of a live disruption on the LHR → SIN → SYD trip (no
- * FlightAware yet). It shows the event, the broken connection, the still-held
- * requirement, the operator's operational steps (never chain-of-thought), and
- * the best alternative with its authority check. Values match the backend
- * recovery fixture: +£96 within the £150 recovery allowance.
+ * When opened with ?trip=<id> the screen shows REAL persisted monitoring:
+ * disruptions detected by the deterministic backend for the booked itinerary,
+ * read from /api/trips/[id]/monitor. It renders honest states — monitoring
+ * unavailable when the flight-status provider is not configured, "no disruption"
+ * when the trip is holding, and the detected disruption when one threatens the
+ * trip. It never fabricates a recovery alternative here: automatic recovery is
+ * not implemented yet, so it says so plainly and points to the recovery flow.
  *
- * "See resolution" continues to the Resolution screen.
+ * Without a trip in context it falls back to the original scripted demo of the
+ * LHR → SIN → SYD disruption (approved Disruption.dc.html design preserved).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useFlow, money } from "../_lib/flow";
+import { fetchMonitoring, runRecovery, type MonitoringView, type ApiRecovery } from "../_lib/trip-client";
 import { PageHeader } from "../_components/PageHeader";
 import { TimelineStep, type StepStatus } from "../_components/TimelineStep";
-import { Wordmark, Alert, Clock, ctaSolid } from "../_components/ui";
+import { Wordmark, Alert, Clock, Check, Warn, ctaSolid } from "../_components/ui";
+
+export default function Disruption() {
+  const [q, setQ] = useState<{ ready: boolean; id: string | null }>({ ready: false, id: null });
+  useEffect(() => {
+    try { setQ({ ready: true, id: new URLSearchParams(window.location.search).get("trip") }); }
+    catch { setQ({ ready: true, id: null }); }
+  }, []);
+
+  if (!q.ready) {
+    return (
+      <>
+        <PageHeader back="/app/execution" center={<Wordmark />} />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 20px" }}>
+          <span className="sz-spin" style={{ width: 26, height: 26, borderRadius: 100, border: "2px solid var(--accent)", borderTopColor: "transparent" }} />
+        </div>
+      </>
+    );
+  }
+  return q.id ? <DisruptionReal tripId={q.id} /> : <DisruptionDemo />;
+}
+
+// --- Real persisted monitoring/disruption view ------------------------------
+
+const monoLabel: React.CSSProperties = { fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase" };
+
+function DisruptionReal({ tripId }: { tripId: string }) {
+  const [view, setView] = useState<MonitoringView | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [recovering, setRecovering] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const back = `/app/trips?trip=${encodeURIComponent(tripId)}`;
+
+  const load = useCallback(async () => {
+    try {
+      const m = await fetchMonitoring(tripId);
+      setView(m);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not load monitoring.");
+    } finally {
+      setLoading(false);
+    }
+  }, [tripId]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const recover = useCallback(async () => {
+    setRecovering(true);
+    setError(null);
+    try {
+      await runRecovery(tripId);
+      await load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Recovery could not run right now.");
+    } finally {
+      setRecovering(false);
+    }
+  }, [tripId, load]);
+
+  const shell = (children: React.ReactNode) => (
+    <>
+      <PageHeader back={back} center={<Wordmark />} />
+      <div style={{ flex: 1, maxWidth: 680, width: "100%", margin: "0 auto", padding: "32px 22px 130px" }}>{children}</div>
+    </>
+  );
+
+  if (loading) {
+    return shell(
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px 0" }}>
+        <span className="sz-spin" style={{ width: 26, height: 26, borderRadius: 100, border: "2px solid var(--accent)", borderTopColor: "transparent" }} />
+      </div>,
+    );
+  }
+  if (error || !view) {
+    return shell(<p className="mono" style={{ fontSize: 13, color: "var(--warm)" }}>{error ?? "That trip could not be loaded."}</p>);
+  }
+
+  const threatening = view.disruptions.filter((d) => d.threatensTrip);
+  const primary = threatening[0] ?? view.disruptions[0] ?? null;
+
+  // Header eyebrow reflects the real trip state.
+  const eyebrow = view.threatened ? "Resolving a disruption" : "Monitoring your trip";
+
+  return shell(
+    <>
+      <div className="mono" style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: view.threatened ? "var(--accent)" : "var(--muted-2)" }}>
+        <span className="sz-soft" style={{ width: 7, height: 7, borderRadius: 100, background: view.threatened ? "var(--accent)" : "var(--muted-2)" }} />
+        {eyebrow}
+      </div>
+
+      {/* Honest: no configured flight-status provider → nothing fabricated. */}
+      {!view.monitored ? (
+        <>
+          <h1 style={headingStyle}>This trip isn&apos;t being monitored yet.</h1>
+          <p style={paraStyle}>Monitoring begins once a booking is confirmed. There is nothing to watch on this trip yet.</p>
+        </>
+      ) : !view.providerConfigured && view.disruptions.length === 0 ? (
+        <>
+          <h1 style={headingStyle}>Monitoring is unavailable.</h1>
+          <div className="sz-up" style={{ marginTop: 24, border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+            <div className="mono" style={{ ...monoLabel, color: "var(--faint)" }}>Flight tracker not configured</div>
+            <p style={{ marginTop: 8, fontSize: 15, lineHeight: 1.5, color: "var(--ink-2)" }}>
+              No flight-status provider is connected, so live status cannot be checked. Space Zero will not fabricate a status — set <span className="mono" style={{ color: "var(--ink)" }}>FLIGHTAWARE_API_KEY</span> to monitor this trip for real.
+            </p>
+          </div>
+        </>
+      ) : !view.threatened ? (
+        <>
+          <h1 style={headingStyle}>Your trip is on track.</h1>
+          <div className="sz-up" style={{ marginTop: 24, border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18, display: "flex", gap: 13, alignItems: "flex-start" }}>
+            <span style={{ color: "var(--muted-2)", flexShrink: 0, marginTop: 2 }}><Clock size={18} /></span>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>No disruptions detected</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--muted-2)", marginTop: 5 }}>
+                Monitoring live · {view.lastDisruptionAt ? `last change ${when(view.lastDisruptionAt)}` : "the booked journey still meets your requirement"}
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <h1 style={headingStyle}>Something changed on your trip.</h1>
+
+          {/* event — driven by the real persisted disruption */}
+          {primary && (
+            <div className="sz-up" style={{ marginTop: 24, border: "1px solid rgba(228,87,46,.4)", borderRadius: 16, background: "var(--surface)", overflow: "hidden" }}>
+              <div style={{ padding: 18, display: "flex", gap: 13, alignItems: "flex-start" }}>
+                <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }}><Alert /></span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>{primary.summary}</div>
+                  <div className="mono" style={{ fontSize: 12, color: "var(--muted-2)", marginTop: 5 }}>
+                    {primary.from} → {primary.to}
+                    {primary.flightNumber ? ` · ${primary.flightNumber}` : ""}
+                    {primary.delayMinutes > 0 ? ` · ${durationLabel(primary.delayMinutes)} late` : ""}
+                    {" · reported by the flight tracker"}
+                  </div>
+                </div>
+              </div>
+              <div style={{ borderTop: "1px solid var(--line-2)", padding: "15px 18px", background: "var(--surface-2)" }}>
+                <div className="mono" style={{ ...monoLabel, color: "var(--faint)" }}>Consequence</div>
+                <div style={{ marginTop: 6, fontSize: 14, color: "var(--ink-2)", lineHeight: 1.45 }}>{primary.detail}</div>
+              </div>
+            </div>
+          )}
+
+          {/* any additional detected disruptions */}
+          {threatening.length > 1 && (
+            <div className="mono" style={{ marginTop: 14, fontSize: 12, color: "var(--muted-2)" }}>
+              +{threatening.length - 1} more affected {threatening.length - 1 === 1 ? "segment" : "segments"} on this trip.
+            </div>
+          )}
+
+          {/* recovery outcome — real persisted result, or trigger it now */}
+          {view.recovery ? (
+            <RecoveryPanel recovery={view.recovery} />
+          ) : (
+            <div className="sz-up" style={{ marginTop: 16, border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+              <div className="mono" style={{ ...monoLabel, color: "var(--accent)" }}>Trip now {view.tripStatus.replace("_", " ").toLowerCase()}</div>
+              <p style={{ marginTop: 8, fontSize: 15, lineHeight: 1.5, color: "var(--ink-2)" }}>
+                This disruption has flagged your trip for recovery. I&apos;ll search alternatives, check them against your arrival requirement and authority, and rebook if one is within your allowance.
+              </p>
+            </div>
+          )}
+
+          {error && <p className="mono" style={{ marginTop: 12, fontSize: 12, color: "var(--warm)" }}>{error}</p>}
+
+          {view.recovery ? (
+            <Link href={`/app/resolution?trip=${encodeURIComponent(tripId)}`} className="sz-hover" style={{ ...ctaSolid, marginTop: 16 }}>See resolution →</Link>
+          ) : (
+            <button onClick={recover} disabled={recovering} className="sz-hover" style={{ ...ctaSolid, marginTop: 16, opacity: recovering ? 0.8 : 1, cursor: recovering ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              {recovering && <span className="sz-spin" style={{ width: 16, height: 16, borderRadius: 100, border: "2px solid var(--bg)", borderTopColor: "transparent" }} />}
+              {recovering ? "Recovering…" : "Recover now →"}
+            </button>
+          )}
+        </>
+      )}
+    </>,
+  );
+}
+
+/** The persisted recovery outcome, in the approved card design. */
+function RecoveryPanel({ recovery }: { recovery: ApiRecovery }) {
+  const c = recovery.currency;
+  if (recovery.status === "RECOVERED") {
+    return (
+      <div className="sz-up" style={{ marginTop: 16, border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", overflow: "hidden" }}>
+        <div style={{ padding: "16px 18px", display: "flex", gap: 12, alignItems: "flex-start", background: "var(--surface-2)", borderBottom: "1px solid var(--line-2)" }}>
+          <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }}><Check size={18} width={2.4} /></span>
+          <div>
+            <div className="mono" style={{ ...monoLabel, color: "var(--accent)" }}>Recovered within authority</div>
+            <div style={{ marginTop: 6, fontSize: 15, lineHeight: 1.5, color: "var(--ink)" }}>{recovery.reason}</div>
+          </div>
+        </div>
+        <div className="mono" style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 12, color: "var(--muted-2)" }}>
+          <span>New arrival <span style={{ color: "var(--ink)", fontWeight: 700 }}>{recovery.newArrivalLabel ?? "—"}</span></span>
+          <span>Extra cost <span style={{ color: "var(--ink)", fontWeight: 700 }}>+{money(recovery.additionalCost, c)}</span></span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="sz-up" style={{ marginTop: 16, border: "1px solid rgba(228,87,46,.4)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: 1 }}><Warn /></span>
+        <div>
+          <div className="mono" style={{ ...monoLabel, color: "var(--accent)" }}>Your decision is needed</div>
+          <p style={{ marginTop: 8, fontSize: 15, lineHeight: 1.5, color: "var(--ink-2)" }}>{recovery.reason}</p>
+          {recovery.overBy != null && recovery.overBy > 0 && (
+            <div className="mono" style={{ marginTop: 10, fontSize: 12, color: "var(--muted-2)" }}>{money(recovery.overBy, c)} over your limit</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const headingStyle: React.CSSProperties = { marginTop: 16, fontSize: "clamp(30px,8.5vw,40px)", lineHeight: 1.05, fontWeight: 700, letterSpacing: "-0.035em", color: "var(--ink)" };
+const paraStyle: React.CSSProperties = { marginTop: 16, fontSize: 15, lineHeight: 1.55, color: "var(--muted)" };
+
+function durationLabel(mins: number): string {
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+function when(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "just now";
+  const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const h = Math.floor(mins / 60);
+  return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
+}
+
+// --- Scripted demo (no trip in context; approved Disruption.dc.html design) --
 
 const STEPS = [
   { label: "Finding alternatives", detail: "Routes that still land before your deadline" },
@@ -25,7 +265,7 @@ const STEPS = [
   { label: "Checking your authority", detail: "Testing cost against your recovery allowance" },
 ];
 
-export default function Disruption() {
+function DisruptionDemo() {
   const { authority, intent } = useFlow();
   const allowance = authority.recoveryAllowance;
   const recoveryCost = 96; // deterministic demo, matches the backend fixture

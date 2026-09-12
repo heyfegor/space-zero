@@ -15,7 +15,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useFlow, money } from "../_lib/flow";
-import { useTrip, useQueryParam } from "../_lib/trip-client";
+import { useTrip, useQueryParam, fetchOptions, type FlightOptionResponse } from "../_lib/trip-client";
+import { executionHref } from "../_lib/flow-nav";
 import { PageHeader } from "../_components/PageHeader";
 import { PageFooter } from "../_components/PageFooter";
 import { Wordmark, Lock, Pencil, ctaAccent } from "../_components/ui";
@@ -43,6 +44,36 @@ export default function Authorization() {
   const withTrip = (path: string) => (tripId ? `${path}?trip=${encodeURIComponent(tripId)}` : path);
   const destination = (usingServer ? trip?.intent.destination : intent.destination) || intent.destination;
 
+  // With a trip in context, the "Selected journey" card must show the REAL
+  // chosen Duffel option (route + price) — the same figure Funding derives —
+  // not the demo fixture. Without a trip, fall back to the flow demo option.
+  const [realOption, setRealOption] = useState<FlightOptionResponse | null>(null);
+  useEffect(() => {
+    if (!tripId) return;
+    let cancelled = false;
+    fetchOptions(tripId)
+      .then((options) => {
+        if (cancelled) return;
+        setRealOption(pickSelected(options));
+      })
+      .catch(() => { /* keep the fixture fallback if options can't be read */ });
+    return () => { cancelled = true; };
+  }, [tripId]);
+
+  const journey = realOption
+    ? {
+        route: `${realOption.origin} → ${[...realOption.via, realOption.destination].join(" → ")}`,
+        arrive: fmtArrive(realOption.arriveAt),
+        cost: realOption.totalAmount,
+        currency: realOption.currency,
+      }
+    : {
+        route: `${selectedOption.a} → ${selectedOption.b} → ${selectedOption.c}`,
+        arrive: selectedOption.arrive,
+        cost: selectedOption.cost,
+        currency: selectedOption.currency,
+      };
+
   const commitBudget = (n: number) => {
     updateAuthority({ budget: n });
     if (usingServer) void save({ budget: n }).catch(() => {});
@@ -64,9 +95,9 @@ export default function Authorization() {
           <div style={{ minWidth: 0 }}>
             <div className="mono" style={{ fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "var(--faint)" }}>Selected journey</div>
             <div style={{ marginTop: 6, fontSize: 17, fontWeight: 700, color: "var(--ink)" }}>{(destination || "Your trip").split(",")[0]}</div>
-            <div className="mono" style={{ marginTop: 4, fontSize: 11, color: "var(--muted-2)" }}>{selectedOption.a} → {selectedOption.b} → {selectedOption.c} · arrives {selectedOption.arrive}</div>
+            <div className="mono" style={{ marginTop: 4, fontSize: 11, color: "var(--muted-2)" }}>{journey.route}{journey.arrive ? ` · arrives ${journey.arrive}` : ""}</div>
           </div>
-          <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: "var(--ink)", flexShrink: 0 }}>{money(selectedOption.cost, selectedOption.currency)}</div>
+          <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: "var(--ink)", flexShrink: 0 }}>{money(journey.cost, journey.currency)}</div>
         </div>
 
         <div className="mono" style={{ marginTop: 26, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--faint)" }}>Spending limits</div>
@@ -88,10 +119,25 @@ export default function Authorization() {
       </div>
 
       <PageFooter>
-        <button onClick={() => router.push(withTrip("/app/execution"))} className="sz-hover" style={ctaAccent}>Give Space Zero authority →</button>
+        <button onClick={() => router.push(executionHref(tripId))} className="sz-hover" style={ctaAccent}>Give Space Zero authority →</button>
       </PageFooter>
     </>
   );
+}
+
+/** Pick the traveler's chosen option: selected, else recommended, else first. */
+function pickSelected(options: FlightOptionResponse[]): FlightOptionResponse | null {
+  if (options.length === 0) return null;
+  return options.find((o) => o.selected) ?? options.find((o) => o.recommended) ?? options[0];
+}
+
+/** Format an ISO arrival as "HH:MM Day" (matches the Options screen). */
+function fmtArrive(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const day = d.toLocaleDateString([], { weekday: "short" });
+  return `${time} ${day}`;
 }
 
 function LimitRow({ label, hint, value, currency, onCommit }: { label: string; hint: string; value: number; currency: string; onCommit: (n: number) => void }) {

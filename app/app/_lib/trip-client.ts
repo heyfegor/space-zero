@@ -167,6 +167,112 @@ export async function selectOption(tripId: string, optionId: string): Promise<vo
   if (!res.ok) throw new Error(await readError(res));
 }
 
+// --- Monitoring / disruptions -----------------------------------------------
+
+export type DisruptionType =
+  | "CANCELLATION"
+  | "DIVERSION"
+  | "MISSED_CONNECTION"
+  | "ARRIVAL_BREACH"
+  | "DELAY";
+
+export interface ApiDisruption {
+  id: string;
+  tripId: string;
+  type: DisruptionType;
+  severity: "MINOR" | "CRITICAL";
+  threatensTrip: boolean;
+  triggersRecovery: boolean;
+  segmentIndex: number;
+  from: string;
+  to: string;
+  flightNumber: string | null;
+  delayMinutes: number;
+  scheduledArriveAt: string;
+  estimatedArriveAt: string | null;
+  summary: string;
+  detail: string;
+  detectedAt: string;
+}
+
+// --- Recovery ---------------------------------------------------------------
+
+export type RecoveryStatus = "RECOVERED" | "ESCALATED";
+
+export type EscalationReason =
+  | "OVER_ALLOWANCE"
+  | "INSUFFICIENT_FUNDING"
+  | "OVER_BUDGET"
+  | "AUTO_RECOVERY_DISABLED"
+  | "NO_ELIGIBLE_OPTION";
+
+/** A persisted recovery outcome (mirrors the domain Recovery). */
+export interface ApiRecovery {
+  id: string;
+  tripId: string;
+  disruptionId: string | null;
+  status: RecoveryStatus;
+  from: string;
+  to: string;
+  currency: string;
+  additionalCost: number;
+  totalAmount: number;
+  newArrival: string | null;
+  newArrivalLabel: string | null;
+  previousArrivalLabel: string | null;
+  bookingReference: string | null;
+  duffelOrderId: string | null;
+  finalCost: number | null;
+  escalationReason: EscalationReason | null;
+  overBy: number | null;
+  reason: string;
+}
+
+/** The persisted monitoring view returned by GET /api/trips/[id]/monitor. */
+export interface MonitoringView {
+  tripId: string;
+  tripStatus: string;
+  /** Trip has a confirmed booking + itinerary to watch. */
+  monitored: boolean;
+  /** Honest availability of the flight-status provider. */
+  providerConfigured: boolean;
+  threatened: boolean;
+  disruptions: ApiDisruption[];
+  lastDisruptionAt: string | null;
+  /** The latest recovery outcome (booked or escalated), or null. */
+  recovery: ApiRecovery | null;
+}
+
+/** Read the persisted monitoring/disruption/recovery data (runs no provider call). */
+export async function fetchMonitoring(tripId: string): Promise<MonitoringView> {
+  const res = await fetch(`/api/trips/${encodeURIComponent(tripId)}/monitor`);
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()).monitoring as MonitoringView;
+}
+
+/**
+ * Run the autonomous recovery workflow for an at-risk trip. Reads the streamed
+ * operational events to completion and returns the final outcome + recovery.
+ */
+export async function runRecovery(
+  tripId: string,
+): Promise<{ status: string; tripStatus: string | null; recovery: ApiRecovery | null }> {
+  const res = await fetch(`/api/trips/${encodeURIComponent(tripId)}/recover`, { method: "POST" });
+  if (!res.ok || !res.body) throw new Error(await readError(res));
+  const text = await res.text();
+  // Parse the final `done` SSE frame for the outcome.
+  let done: { status: string; tripStatus: string | null; recovery: ApiRecovery | null } | null = null;
+  for (const chunk of text.split("\n\n")) {
+    const line = chunk.split("\n").find((l) => l.startsWith("event: done"));
+    if (line) {
+      const dataLine = chunk.split("\n").find((l) => l.startsWith("data: "));
+      if (dataLine) done = JSON.parse(dataLine.slice(6));
+    }
+  }
+  if (!done) throw new Error("Recovery did not complete.");
+  return done;
+}
+
 /** Read a query param on the client without needing a Suspense boundary. */
 export function useQueryParam(name: string): string | null {
   const [value, setValue] = useState<string | null>(null);

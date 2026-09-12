@@ -9,10 +9,11 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "verify:strands": "node scripts/verify-strands.ts",
-    "test": "node --import tsx --test src/domain/authority.test.ts src/domain/trip-state.test.ts src/domain/booking.test.ts src/domain/funding.test.ts src/server/tools/tools.test.ts src/server/agent-api.test.ts src/server/trips/trips.test.ts src/server/trips/funding-service.test.ts src/server/flights/flights.test.ts src/server/booking/booking.test.ts"
+    "test": "node --import tsx --test src/domain/authority.test.ts src/domain/trip-state.test.ts src/domain/booking.test.ts src/domain/funding.test.ts src/server/tools/tools.test.ts src/server/agent-api.test.ts src/server/execution-flow.test.ts src/server/trips/trips.test.ts src/server/trips/funding-service.test.ts src/server/flights/flights.test.ts src/server/booking/booking.test.ts src/server/monitoring/monitoring.test.ts src/server/recovery/recovery.test.ts src/server/recovery/lifecycle.test.ts src/server/payments/payment.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.109.1",
+    "@google/genai": "^2.22.0",
     "@strands-agents/sdk": "1.16.0",
     "@supabase/supabase-js": "2.115.0",
     "next": "16.3.4",

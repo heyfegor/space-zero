@@ -10,7 +10,7 @@
 import { tool } from "@strands-agents/sdk";
 import { z } from "zod";
 import { evaluateAuthority } from "../../domain/authority";
-import { getTripById } from "./dev-store";
+import { resolveTrip } from "./resolve-trip";
 
 export const checkAuthorityTool = tool({
   name: "check_authority",
@@ -23,8 +23,8 @@ export const checkAuthorityTool = tool({
     tripId: z.string().describe("The trip whose allowance applies"),
     amount: z.number().describe("The amount the agent wants to spend"),
   }),
-  callback: ({ tripId, amount }) => {
-    const trip = getTripById(tripId);
+  callback: async ({ tripId, amount }) => {
+    const trip = await resolveTrip(tripId);
     if (!trip) {
       return { found: false, tripId, reason: `No trip found for id ${tripId}.` };
     }
