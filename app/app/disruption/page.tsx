@@ -123,7 +123,7 @@ function DisruptionReal({ tripId }: { tripId: string }) {
           <div className="sz-up" style={{ marginTop: 24, border: "1px solid var(--line)", borderRadius: 16, background: "var(--surface)", padding: 18 }}>
             <div className="mono" style={{ ...monoLabel, color: "var(--faint)" }}>Flight tracker not configured</div>
             <p style={{ marginTop: 8, fontSize: 15, lineHeight: 1.5, color: "var(--ink-2)" }}>
-              No flight-status provider is connected, so live status cannot be checked. Space Zero will not fabricate a status — set <span className="mono" style={{ color: "var(--ink)" }}>FLIGHTAWARE_API_KEY</span> to monitor this trip for real.
+              No flight-status provider is connected, so live status cannot be checked. Space Zero will not fabricate a status — it will begin monitoring this trip once the flight tracker is connected.
             </p>
           </div>
         </>

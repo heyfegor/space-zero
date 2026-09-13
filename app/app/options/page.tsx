@@ -12,10 +12,9 @@
  */
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useFlow, type FlightOption as CardOption } from "../_lib/flow";
 import {
-  useQueryParam,
   fetchOptions,
   searchFlights,
   selectOption,
@@ -31,26 +30,35 @@ type View = "loading" | "searching" | "ready" | "empty" | "fallback";
 
 export default function Options() {
   const router = useRouter();
-  const tripId = useQueryParam("trip");
   const flow = useFlow();
+
+  // Read ?trip= once, distinguishing "not read yet" from "absent" — otherwise a
+  // no-trip visit (or a retry) can never leave the loading state.
+  const [q, setQ] = useState<{ ready: boolean; id: string | null }>({ ready: false, id: null });
+  useEffect(() => {
+    try { setQ({ ready: true, id: new URLSearchParams(window.location.search).get("trip") }); }
+    catch { setQ({ ready: true, id: null }); }
+  }, []);
+  const tripId = q.id;
 
   const [view, setView] = useState<View>("loading");
   const [options, setOptions] = useState<FlightOptionResponse[]>([]);
   const [reason, setReason] = useState<SearchStatus | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fallbackSel, setFallbackSel] = useState<string>(flow.selectedOptionId);
-  const started = useRef(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (tripId === null) return; // query not read yet
-    if (started.current) return;
-    started.current = true;
-
-    if (!tripId) { setView("fallback"); return; }
+    if (!q.ready) return; // query not read yet
+    if (!q.id) { setView("fallback"); return; }
+    const id = q.id;
+    let cancelled = false;
+    setView("loading");
 
     (async () => {
       try {
-        const existing = await fetchOptions(tripId);
+        const existing = await fetchOptions(id);
+        if (cancelled) return;
         if (existing.length > 0) {
           setOptions(existing);
           setSelectedId(existing.find((o) => o.selected)?.id ?? existing.find((o) => o.recommended)?.id ?? existing[0].id);
@@ -58,10 +66,11 @@ export default function Options() {
           return;
         }
       } catch {
-        /* fall through to a fresh search */
+        if (cancelled) return; // fall through to a fresh search
       }
       setView("searching");
-      const res = await searchFlights(tripId);
+      const res = await searchFlights(id);
+      if (cancelled) return;
       if (res.options.length > 0) {
         setOptions(res.options);
         setSelectedId(res.options.find((o) => o.recommended)?.id ?? res.options[0].id);
@@ -71,7 +80,9 @@ export default function Options() {
         setView("empty");
       }
     })();
-  }, [tripId]);
+
+    return () => { cancelled = true; };
+  }, [q.ready, q.id, retry]);
 
   async function choose(id: string) {
     setSelectedId(id);
@@ -91,7 +102,7 @@ export default function Options() {
         ) : view === "loading" || view === "searching" ? (
           <SearchingState searching={view === "searching"} />
         ) : view === "empty" ? (
-          <EmptyState reason={reason} tripId={tripId} onRetry={() => { started.current = false; setView("loading"); }} />
+          <EmptyState reason={reason} tripId={tripId} onRetry={() => setRetry((n) => n + 1)} />
         ) : (
           <>
             <AgentLine count={options.length} />

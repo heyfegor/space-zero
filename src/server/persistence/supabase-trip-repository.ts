@@ -18,6 +18,19 @@ import {
 } from "./trip-row";
 import { getSupabaseAdmin } from "./supabase-client";
 
+/**
+ * Trip ids are UUID primary keys. A non-UUID id (e.g. an in-memory staged/demo
+ * id like "trip_demo_lhr_sin_syd") can never match a row, and querying a uuid
+ * column with one makes Postgres raise "invalid input syntax for type uuid".
+ * Treat such ids as a clean miss so callers fall back to the demo store (and a
+ * malformed client id yields a 404, never a 500). This is not validation of real
+ * ids — it only filters values the column type cannot possibly hold.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(id: string): boolean {
+  return UUID_RE.test(id);
+}
+
 export class SupabaseTripRepository implements TripRepository {
   async create(trip: Trip): Promise<Trip> {
     const db = getSupabaseAdmin();
@@ -30,6 +43,8 @@ export class SupabaseTripRepository implements TripRepository {
   }
 
   async getById(id: string): Promise<Trip | null> {
+    // A non-UUID id cannot be a persisted trip — miss cleanly (see isUuid).
+    if (!isUuid(id)) return null;
     const db = getSupabaseAdmin();
     const { data, error } = await db.from("trips").select("*").eq("id", id).maybeSingle();
     if (error) throw new Error(`Failed to load trip: ${error.message}`);
@@ -37,6 +52,7 @@ export class SupabaseTripRepository implements TripRepository {
   }
 
   async update(id: string, patch: TripPatch): Promise<Trip | null> {
+    if (!isUuid(id)) return null;
     const db = getSupabaseAdmin();
     const row = patchToRow(patch);
     if (Object.keys(row).length === 0) return this.getById(id);

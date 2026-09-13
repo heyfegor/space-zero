@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 700" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="Space Zero architecture: user through Next.js and the Strands agent, whose tools reach Supabase, Duffel, FlightAware and Airwallex, with every action funnelled through the deterministic authority engine and the execute_booking choke point.">
+  <!-- opaque panel so dark text stays legible on light AND dark backgrounds -->
+  <rect x="0" y="0" width="980" height="700" fill="#faf9f7"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#3f3f46"/>
+    </marker>
+    <style>
+      .box{fill:#ffffff;stroke:#3f3f46;stroke-width:1.5;rx:10;}
+      .t{fill:#18181b;font-size:14px;font-weight:600;}
+      .s{fill:#52525b;font-size:11px;}
+      .lbl{fill:#3f3f46;font-size:11px;font-weight:600;}
+      .flow{stroke:#3f3f46;stroke-width:2;fill:none;}
+      .accent{fill:#fdeee9;stroke:#e4572e;stroke-width:2;}
+      .accentt{fill:#9a3412;font-size:14px;font-weight:700;}
+    </style>
+  </defs>
+
+  <text x="30" y="34" font-size="18" font-weight="700" fill="#18181b">Space Zero — system architecture</text>
+  <text x="30" y="54" class="s">Autonomous travel operator. The agent proposes; the deterministic authority engine and the execute_booking choke point decide and act.</text>
+
+  <!-- spine: User -> Next.js -> Strands Agent -->
+  <rect class="box" x="360" y="76" width="260" height="46" rx="10"/>
+  <text x="490" y="99" text-anchor="middle" class="t">User (mobile-first browser)</text>
+  <text x="490" y="114" text-anchor="middle" class="s">describes the trip &amp; sets limits</text>
+
+  <line class="flow" x1="490" y1="122" x2="490" y2="150" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="330" y="152" width="320" height="52" rx="10"/>
+  <text x="490" y="174" text-anchor="middle" class="t">Next.js on Vercel</text>
+  <text x="490" y="191" text-anchor="middle" class="s">App Router UI + server route handlers (SSE). Keys stay server-side.</text>
+
+  <line class="flow" x1="490" y1="204" x2="490" y2="232" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="330" y="234" width="320" height="56" rx="10"/>
+  <text x="490" y="256" text-anchor="middle" class="t">Strands Agent (TypeScript SDK)</text>
+  <text x="490" y="273" text-anchor="middle" class="s">reasoning loop · model: Google Gemini (current)</text>
+  <text x="490" y="286" text-anchor="middle" class="s">orchestrates tools · cannot decide authority itself</text>
+
+  <!-- tool -> provider branches -->
+  <text x="30" y="330" class="lbl">TOOLS (typed, server-side)</text>
+  <text x="720" y="330" class="lbl">PROVIDERS</text>
+  <line class="flow" x1="490" y1="290" x2="490" y2="312" />
+  <line class="flow" x1="150" y1="312" x2="830" y2="312" stroke-dasharray="0"/>
+
+  <!-- row 1: trip/persistence -->
+  <line class="flow" x1="150" y1="312" x2="150" y2="352" marker-end="url(#arrow)"/>
+  <rect class="box" x="30" y="354" width="300" height="44" rx="9"/>
+  <text x="44" y="374" class="t">Trip / persistence tools</text>
+  <text x="44" y="390" class="s">get_trip · search_flights writeback</text>
+  <line class="flow" x1="330" y1="376" x2="700" y2="376" marker-end="url(#arrow)"/>
+  <rect class="box" x="700" y="354" width="250" height="44" rx="9"/>
+  <text x="714" y="374" class="t">Supabase (Postgres)</text>
+  <text x="714" y="390" class="s">trips, options, funding, disruptions…</text>
+
+  <!-- row 2: flight search/booking -->
+  <line class="flow" x1="150" y1="312" x2="150" y2="418" />
+  <line class="flow" x1="150" y1="418" x2="150" y2="418"/>
+  <rect class="box" x="30" y="410" width="300" height="44" rx="9"/>
+  <text x="44" y="430" class="t">Flight search / booking</text>
+  <text x="44" y="446" class="s">search_recovery_options · execute_booking</text>
+  <line class="flow" x1="330" y1="432" x2="700" y2="432" marker-end="url(#arrow)"/>
+  <rect class="box" x="700" y="410" width="250" height="44" rx="9"/>
+  <text x="714" y="430" class="t">Duffel — TEST mode</text>
+  <text x="714" y="446" class="s">real API, test orders (no live money)</text>
+
+  <!-- row 3: monitoring -->
+  <rect class="box" x="30" y="466" width="300" height="44" rx="9"/>
+  <text x="44" y="486" class="t">Monitoring</text>
+  <text x="44" y="502" class="s">get_recovery_context · assessDisruption</text>
+  <line class="flow" x1="330" y1="488" x2="700" y2="488" marker-end="url(#arrow)"/>
+  <rect class="box" x="700" y="466" width="250" height="44" rx="9"/>
+  <text x="714" y="486" class="t">FlightAware AeroAPI</text>
+  <text x="714" y="502" class="s">live status; disruption may be simulated</text>
+
+  <!-- row 4: payment -->
+  <rect class="box" x="30" y="522" width="300" height="44" rx="9"/>
+  <text x="44" y="542" class="t">Payment</text>
+  <text x="44" y="558" class="s">payment-service (gated · idempotent)</text>
+  <line class="flow" x1="330" y1="544" x2="700" y2="544" marker-end="url(#arrow)"/>
+  <rect class="box" x="700" y="522" width="250" height="44" rx="9"/>
+  <text x="714" y="542" class="t">Airwallex — SANDBOX</text>
+  <text x="714" y="558" class="s">auth + intent only; cannot settle</text>
+
+  <!-- left spine down to authority + choke point -->
+  <line class="flow" x1="150" y1="312" x2="150" y2="600"/>
+  <line class="flow" x1="150" y1="376" x2="150" y2="376"/>
+  <line class="flow" x1="150" y1="432" x2="30" y2="432"/>
+  <line class="flow" x1="150" y1="488" x2="30" y2="488"/>
+  <line class="flow" x1="150" y1="544" x2="30" y2="544"/>
+
+  <line class="flow" x1="150" y1="600" x2="360" y2="612" marker-end="url(#arrow)"/>
+
+  <!-- authority engine + choke point -->
+  <rect class="accent" x="362" y="590" width="300" height="44" rx="10"/>
+  <text x="512" y="610" text-anchor="middle" class="accentt">Deterministic Authority Engine</text>
+  <text x="512" y="626" text-anchor="middle" class="s">pure code · requested ≤ recovery allowance</text>
+
+  <line class="flow" x1="662" y1="612" x2="700" y2="612" marker-end="url(#arrow)"/>
+  <rect class="accent" x="700" y="590" width="250" height="44" rx="10"/>
+  <text x="825" y="610" text-anchor="middle" class="accentt">Execution choke point</text>
+  <text x="825" y="626" text-anchor="middle" class="s">execute_booking — the only side effect</text>
+
+  <text x="30" y="668" class="s">The agent never overrides the authority engine and never triggers an uncontrolled payment: every booking or charge is re-checked</text>
+  <text x="30" y="684" class="s">server-side inside execute_booking / the payment service, against store data — not against any amount the model supplied.</text>
+</svg>
